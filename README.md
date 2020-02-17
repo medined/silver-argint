@@ -4,17 +4,25 @@ This project documents my exploration into [kubernets](https://kubernetes.io/). 
 
 ## Notes
 
-* [Using `kops`, start minimal kubernetes cluster in AWS](docs/create-cluster.md)
+These articles are listed in the order in order you should read them. Later articles uses the K8S resources created in earlier articles.
+
+* kops
+    * [Cluster](docs/create-cluster.md)
+    * [HA Cluster](docs/create-ha-cluster.md)
 * [Create Node application in cluster](docs/deploy-node-application.md)
 * [Deploy Certificate Manager](docs/deploy-cert-manager.md)
 * [Deploy Helm](docs/deploy-helm.md)
-* [Deploy MySQL](docs/deploy-mysql.md)
-* [Deploy PostgreSQL](docs/deploy-postgresql.md)
-* [Deploy Redis](docs/deploy-redis.md)
-* [Deploy Jenkins](docs/deploy-jenkins.md)
+* Databases
+    * [Deploy MySQL](docs/deploy-mysql.md)
+    * [Deploy PostgreSQL](docs/deploy-postgresql.md)
+    * [Deploy Redis](docs/deploy-redis.md)
 * [Deploy Public Docker Registry](docs/deploy-public-docker-registry.md)
-* [Deploy Docker Registry](docs/deploy-docker-registry.md)
 * [Deploy Nginx](docs/deploy-nginx.md)
+
+## In Progress
+
+* [Deploy Jenkins](docs/deploy-jenkins.md)
+* [Deploy Docker Registry](docs/deploy-docker-registry.md)
 
 ## Research
 
