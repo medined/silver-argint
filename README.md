@@ -6,6 +6,7 @@ This project documents my exploration into [kubernets](https://kubernetes.io/). 
 
 * [Using `kops`, start minimal kubernetes cluster in AWS](docs/create-cluster.md)
 * [Create Node application in cluster](docs/deploy-node-application.md)
+* [Deploy Certificate Manager](docs/deploy-cert-manager.md)
 * [Deploy Helm](docs/deploy-helm.md)
 * [Deploy MySQL](docs/deploy-mysql.md)
 * [Deploy Jenkins](docs/deploy-jenkins.md)

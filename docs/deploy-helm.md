@@ -1,7 +1,12 @@
-# Deploy Jenkins
+# Deploy Helm
+
+The package manager for Kubernetes. Helm helps you manage Kubernetes applications — Helm Charts help you define, install, and upgrade even the most complex Kubernetes application. Charts are easy to create, version, share, and publish — so start using Helm and stop the copy-and-paste. The latest version of Helm is maintained by the CNCF - in collaboration with Microsoft, Google, Bitnami and the Helm contributor community.
+
+NOTE: With the release of Helm 3, tiller is no longer needed.
 
 ## Links
 
+* https://helm.sh/blog/helm-3-released/
 * https://helm.sh/docs/intro/install/
  
 ## Steps

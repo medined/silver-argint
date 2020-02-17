@@ -146,20 +146,20 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-b
 * Create the admin-user service account.
 
 ```
-cat <<EOF > dashboard-adminuser.yaml
+cat <<EOF > yaml/dashboard-adminuser.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: admin-user
   namespace: kubernetes-dashboard
 EOF
-kubectl apply -f dashboard-adminuser.yaml
+kubectl apply -f yaml/dashboard-adminuser.yaml
 ```
 
 * Create a cluser role binding.
 
 ```
-cat <<EOF > dashboard-adminuser-clusterrolebinding.yaml
+cat <<EOF > yaml/dashboard-adminuser-clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -173,7 +173,7 @@ subjects:
   name: admin-user
   namespace: kubernetes-dashboard
 EOF
-kubectl apply -f dashboard-adminuser-clusterrolebinding.yaml
+kubectl apply -f yaml/dashboard-adminuser-clusterrolebinding.yaml
 ```
 
 * Get a login bearer token. Copy the token and paste it into the login screen.
@@ -182,7 +182,7 @@ kubectl apply -f dashboard-adminuser-clusterrolebinding.yaml
 kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep admin-user | awk '{print $1}')
 ```
 
-* Start the proxy. This fowards local http requests to the remote cluster.
+* Start the proxy. This forwards local http requests to the remote cluster.
 
 ```
 kubectl proxy
