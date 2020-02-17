@@ -9,11 +9,12 @@ This project documents my exploration into [kubernets](https://kubernetes.io/). 
 * [Deploy Certificate Manager](docs/deploy-cert-manager.md)
 * [Deploy Helm](docs/deploy-helm.md)
 * [Deploy MySQL](docs/deploy-mysql.md)
+* [Deploy PostgreSQL](docs/deploy-postgresql.md)
+* [Deploy Redis](docs/deploy-redis.md)
 * [Deploy Jenkins](docs/deploy-jenkins.md)
-* [Deploy PostgreSQL]/(docs/deploy-postgresql.md)
-* Redis
 * [Deploy Public Docker Registry](docs/deploy-public-docker-registry.md)
 * [Deploy Docker Registry](docs/deploy-docker-registry.md)
+* [Deploy Nginx](docs/deploy-nginx.md)
 * S3 for storage
 * HTTPS for security
 * Access control for isolation.
