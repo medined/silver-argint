@@ -17,12 +17,52 @@ curl -u user:pass https://registry.va-oit.cloud/v2/catalog
 
 ## Steps
 
-* Create a vanity URL. Using Route53, create a CNAME record pointing to the K8S_HOSTNAME. For example, registry.va-oit.cloud. Wait a few minutes for the DNS change to propagate. When you get a valid response to `dig NS registry.va-oit.cloud` you can move on. 
+  * Define the DNS action which is inserting or updating the echo hostname.
+
+```
+cat <<EOF > json/dns-action.json
+{
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "registry.$NAME",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "$K8S_HOSTNAME"
+          }
+        ]
+      }
+    }
+  ]
+}
+EOF
+
+export HOSTED_ZONE_ID=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name==\`$NAME.\`].Id" --output text)
+
+echo "NAME:           $NAME"
+echo "HOSTED_ZONE_ID: $HOSTED_ZONE_ID"
+echo "K8S_HOSTNAME:   $K8S_HOSTNAME"
+
+aws route53 change-resource-record-sets \
+  --hosted-zone-id $HOSTED_ZONE_ID \
+  --change-batch file://json/dns-action.json
+```
+
+* Check the DNS record was created.
+
+```
+aws route53 list-resource-record-sets \
+  --hosted-zone-id $HOSTED_ZONE_ID \
+  --query="ResourceRecordSets[?Name==\`registry.$NAME.\`]"
+``
 
 * Export some variables to parameterize later steps.
 
 ```
-export REGISTRY_HOST=registry.va-oit.cloud
+export REGISTRY_HOST=registry.$NAME
 export ISSUER_REF=letsencrypt-production-issuer
 ```
 
@@ -40,7 +80,7 @@ spec:
   issuerRef:
     name: $ISSUER_REF
   dnsNames:
-  - registry.va-oit.cloud
+  - $REGISTRY_HOST
 EOF
 kubectl apply -f yaml/registry-certificate.yaml
 ```

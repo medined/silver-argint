@@ -12,7 +12,8 @@
 * Create an S3 bucket for random stuff.
 
 ```
-aws s3 mb s3://davidmm-0341b7d4-4de1-11ea-b20a-9f9248f37193
+export S3_RANDOM=davidmm-0341b7d4-4de1-11ea-b20a-9f9248f37193
+aws s3 mb s3://$S3_RANDOM
 ```
 
 * Register a domain using Route53. For example, using va-oit.cloud. Wait until the domain has been provisioned and you can find it using a command like the following.
@@ -31,6 +32,12 @@ aws s3 mb s3://va-oit-cloud--16d7b802-4de6-11ea-924b-ef8fcd6cbcb5
 
 ```
 export KOPS_STATE_STORE=s3://va-oit-cloud--16d7b802-4de6-11ea-924b-ef8fcd6cbcb5
+```
+
+* Specify a cluster name.
+
+```
+export NAME=va-oit.cloud
 ```
 
 * Install `kubectl`.
@@ -73,10 +80,10 @@ kops version
 * Create an AWS EC2 key pair. For example, it could be called va-oit-cloud. Then copy the file to S3 for safekeeping. Note that you should lock down the permissions as well. The last thing to do is generate a public key from the PEM file (the private key)
 
 ```
-chmod 600 ~/Downloads/va-oit-cloud.pem
-ssh-keygen -y -f ~/Downloads/va-oit-cloud.pem > ~/Downloads/va-oit-cloud.pub
-aws s3 cp ~/Downloads/va-oit-cloud.pem s3://davidmm-0341b7d4-4de1-11ea-b20a-9f9248f37193
-aws s3 cp ~/Downloads/va-oit-cloud.pub s3://davidmm-0341b7d4-4de1-11ea-b20a-9f9248f37193
+chmod 600 ~/Downloads/$NAME.pem
+ssh-keygen -y -f ~/Downloads/$NAME.pem > ~/Downloads/$NAME.pub
+aws s3 cp ~/Downloads/$NAME.pem s3://$S3_RANDOM
+aws s3 cp ~/Downloads/$NAME.pub s3://$S3_RANDOM
 ```
 
 * Create the cluster configuration.
@@ -85,8 +92,8 @@ aws s3 cp ~/Downloads/va-oit-cloud.pub s3://davidmm-0341b7d4-4de1-11ea-b20a-9f92
 kops create cluster \
   --cloud=aws \
   --zones=us-east-1a \
-  --ssh-public-key ~/Downloads/va-oit-cloud.pub \
-  va-oit.cloud
+  --ssh-public-key ~/Downloads/$NAME.pub \
+  $NAME
 ```
 
 * As a side note, you can delete the configuration you just created using the following command.
@@ -98,44 +105,26 @@ kops delete cluster --name va-oit.cloud --yes
 * Configure the cluster.
 
 ```
-kops update cluster --name va-oit.cloud --yes
-    I0212 17:47:34.132763   11107 executor.go:103] Tasks: 0 done / 86 total; 44 can run
-    I0212 17:47:34.761536   11107 vfs_castore.go:729] Issuing new certificate: "etcd-peers-ca-events"
-    I0212 17:47:34.767536   11107 vfs_castore.go:729] Issuing new certificate: "etcd-peers-ca-main"
-    I0212 17:47:34.800099   11107 vfs_castore.go:729] Issuing new certificate: "apiserver-aggregator-ca"
-    I0212 17:47:34.829545   11107 vfs_castore.go:729] Issuing new certificate: "etcd-manager-ca-events"
-    I0212 17:47:34.886319   11107 vfs_castore.go:729] Issuing new certificate: "etcd-manager-ca-main"
-    I0212 17:47:34.988459   11107 vfs_castore.go:729] Issuing new certificate: "ca"
-    I0212 17:47:35.050597   11107 vfs_castore.go:729] Issuing new certificate: "etcd-clients-ca"
-    I0212 17:47:35.871092   11107 executor.go:103] Tasks: 44 done / 86 total; 24 can run
-    I0212 17:47:36.608023   11107 vfs_castore.go:729] Issuing new certificate: "kube-scheduler"
-    I0212 17:47:36.655417   11107 vfs_castore.go:729] Issuing new certificate: "kube-controller-manager"
-    I0212 17:47:36.672219   11107 vfs_castore.go:729] Issuing new certificate: "master"
-    I0212 17:47:36.673181   11107 vfs_castore.go:729] Issuing new certificate: "apiserver-proxy-client"
-    I0212 17:47:36.698056   11107 vfs_castore.go:729] Issuing new certificate: "apiserver-aggregator"
-    I0212 17:47:36.735899   11107 vfs_castore.go:729] Issuing new certificate: "kubelet"
-    I0212 17:47:36.801997   11107 vfs_castore.go:729] Issuing new certificate: "kubelet-api"
-    I0212 17:47:36.906579   11107 vfs_castore.go:729] Issuing new certificate: "kops"
-    I0212 17:47:36.982832   11107 vfs_castore.go:729] Issuing new certificate: "kube-proxy"
-    I0212 17:47:37.035202   11107 vfs_castore.go:729] Issuing new certificate: "kubecfg"
-    I0212 17:47:37.392695   11107 executor.go:103] Tasks: 68 done / 86 total; 16 can run
-    I0212 17:47:37.842009   11107 launchconfiguration.go:364] waiting for IAM instance profile "nodes.va-oit.cloud" to be ready
-    I0212 17:47:37.863933   11107 launchconfiguration.go:364] waiting for IAM instance profile "masters.va-oit.cloud" to be ready
-    I0212 17:47:48.307187   11107 executor.go:103] Tasks: 84 done / 86 total; 2 can run
-    I0212 17:47:49.108466   11107 executor.go:103] Tasks: 86 done / 86 total; 0 can run
-    I0212 17:47:49.108517   11107 dns.go:155] Pre-creating DNS records
-    I0212 17:47:50.292963   11107 update_cluster.go:305] Exporting kubecfg for cluster
-    kops has set your kubectl context to va-oit.cloud
-
-    Cluster is starting.  It should be ready in a few minutes.
-
-    Suggestions:
-    * validate cluster: kops validate cluster
-    * list nodes: kubectl get nodes --show-labels
-    * ssh to the master: ssh -i ~/.ssh/id_rsa admin@api.va-oit.cloud
-    * the admin user is specific to Debian. If not using Debian please use the appropriate user based on your OS.
-    * read about installing addons at: https://github.com/kubernetes/kops/blob/master/docs/addons.md.
+kops update cluster --name $NAME --yes
 ```
+
+* Wait several minutes for the EC2 instances to become active. The validate the cluster is running.
+
+```
+kops validate cluster
+```
+
+* You can list the nodes.
+
+```
+kubectl get nodes
+```
+
+* You can SSH to the master node but I don't recommend this. If you are not using Debian as the base operating system, you might need to use a different user than `admin`.
+
+```
+ssh -i ~/Downloads/$NAME.pem admin@api.$NAME
+``
 
 * Deploy the dashboard.
 

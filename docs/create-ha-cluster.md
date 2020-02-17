@@ -121,6 +121,13 @@ kops delete cluster --name $NAME --yes
 kops update cluster --name $NAME --yes
 ```
 
+* As a side note, you can delete the configuration you just created using the following command.
+
+```
+kops delete cluster --name $NAME --yes
+```
+
+
 * Validate the cluster. If you see an `i/o timeout` the EC2 instances are probably not yet available. Wait some more. If 15 minutes goes by and you still can't validate, something is wrong. Good luck.
 
 ```

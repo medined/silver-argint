@@ -9,6 +9,10 @@ This document shows how to use cert-manager in a sandbox namespace.
 * https://cert-manager.io/
 * https://cert-manager.io/docs/tutorials/acme/ingress/
 
+## Prequisites
+
+* [Create sandbox Namespace](create-sandbox-namespace.md)
+
 ## Steps
 
 * Install certificate manager.
@@ -16,39 +20,6 @@ This document shows how to use cert-manager in a sandbox namespace.
 ```
 helm repo add jetstack https://charts.jetstack.io
 helm install cert-manager jetstack/cert-manager --version v0.13.0 --namespace kube-system
-```
-
-* Create sandbox namespace.
-
-```
-cat <<EOF > yaml/namespace-sandbox.yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: sandbox
-  labels:
-    name: sandbox
-EOF
-kubectl create -f yaml/namespace-sandbox.yaml
-```
-
-* Set the `kubectl` context so that `sandbox` is the current namespace. Undo this action by using `default` as the namespace.
-
-```
-kubectl config set-context --current --namespace=sandbox
-```
-
-* Install ingress controller. Note that `dmm` is used as a prefix.
-
-```
-helm install dmm stable/nginx-ingress --namespace sandbox
-```
-
-* Get the load balancer hostname assigned to your nginx-ingress-controller service.
-
-```
-K8S_HOSTNAME=$(kubectl get service dmm-nginx-ingress-controller --namespace sandbox -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-echo $K8S_HOSTNAME
 ```
 
 ### Deploy Echo Application
@@ -63,6 +34,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: echo
+  namespace: sandbox
 spec:
   ports:
   - port: 80
@@ -74,6 +46,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: echo
+  namespace: sandbox
 spec:
   selector:
     matchLabels:
@@ -92,7 +65,7 @@ spec:
         ports:
         - containerPort: 5678
 EOF
-kubectl apply -f yaml/echo-application.yaml --namespace sandbox
+kubectl apply -f yaml/echo-application.yaml
 ```
 
 * Check the service is running. You should see the `echo` service in the list.
@@ -101,7 +74,55 @@ kubectl apply -f yaml/echo-application.yaml --namespace sandbox
 kubectl get service --namespace sandbox
 ```
 
-* Create a vanity URL for the echo service. Using Route53, create a CNAME record pointing to the K8S_HOSTNAME. For example, echo.va-oit.cloud. Wait a few minutes for the DNS change to propagate. When you get a valid response to `dig NS echo.va-oit.cloud` you can move on.
+* Get the load balancer hostname assigned to your nginx-ingress-controller service.
+
+```
+K8S_HOSTNAME=$(kubectl get service dmm-nginx-ingress-controller --namespace sandbox -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+echo $K8S_HOSTNAME
+```
+
+* Create a vanity URL for the echo service.
+
+  * Define the DNS action which is inserting or updating the echo hostname.
+
+```
+cat <<EOF > json/dns-action.json
+{
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "echo.$NAME",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "$K8S_HOSTNAME"
+          }
+        ]
+      }
+    }
+  ]
+}
+EOF
+
+export HOSTED_ZONE_ID=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name==\`$NAME.\`].Id" --output text)
+
+echo "NAME:           $NAME"
+echo "HOSTED_ZONE_ID: $HOSTED_ZONE_ID"
+
+aws route53 change-resource-record-sets \
+  --hosted-zone-id $HOSTED_ZONE_ID \
+  --change-batch file://json/dns-action.json
+```
+
+* Check the DNS record was created.
+
+```
+aws route53 list-resource-record-sets \
+  --hosted-zone-id $HOSTED_ZONE_ID \
+  --query="ResourceRecordSets[?Name==\`echo.$NAME.\`]"
+``
 
 * Route traffic directed at the `echo` subdomain within the cluster.
 
@@ -111,34 +132,36 @@ apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: echo-ingress
+  namespace: sandbox
 spec:
   rules:
-  - host: echo.va-oit.cloud
+  - host: echo.$NAME
     http:
       paths:
       - backend:
           serviceName: echo
           servicePort: 80
 EOF
-kubectl apply -f yaml/echo-ingress.yaml --namespace sandbox
+kubectl apply -f yaml/echo-ingress.yaml
 ```
 
 * Call the echo service. It should return `silverargint`.
 
 ```
-curl echo.va-oit.cloud
+curl echo.$NAME
 ```
 
 ### Integrate With Let's Encrypt
 
-* Create Let's Encrypt Issuer for a development environment.
+* Create Let's Encrypt Issuer for a development and production environments. The main difference is the ACME server URL.
 
 ```
-cat <<EOF > yaml/kuard-issuer-developmemt.yaml
+cat <<EOF > yaml/kuard-issuer.yaml
 apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
 metadata:
   name: letsencrypt-development-issuer
+  namespace: sandbox
 spec:
   acme:
     # The ACME server URL
@@ -153,18 +176,12 @@ spec:
     - http01:
         ingress:
           class: nginx
-EOF
-kubectl create -f yaml/kuard-issuer-developmemt.yaml --namespace sandbox
-```
-
-* Create a Let's Encrypt Issuer for a production environment.
-
-```
-cat <<EOF > yaml/kuard-issuer-production.yaml
+---
 apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
 metadata:
   name: letsencrypt-production-issuer
+  namespace: sandbox
 spec:
   acme:
     # The ACME server URL
@@ -180,7 +197,7 @@ spec:
         ingress:
           class: nginx
 EOF
-kubectl create -f yaml/kuard-issuer-production.yaml --namespace sandbox
+kubectl create -f yaml/kuard-issuer.yaml
 ```
 
 * Check on the status of the development issuer. But entries should be ready.
@@ -191,11 +208,52 @@ kubectl get issuer --namespace sandbox
 
 ### Deploy Kuard Application
 
-Kuard is a demonstration application from the "Kubernetes Up and Running" book. It is another example how to deploy and application.
+Kuard is a demonstration application from the "Kubernetes Up and Running" book. It is another example how to deploy an application.
 
-* Create a vanity URL for the kuard service. Using Route53, create a CNAME record pointing to the K8S_HOSTNAME. For example, kuard.va-oit.cloud. Wait a few minutes for the DNS change to propagate. When you get a valid response to `dig NS kuard.va-oit.cloud` you can move on.
+* Create a vanity URL for the Kuard service.
 
-* Deploy an example service.
+  * Define the DNS action which is inserting or updating the echo hostname.
+
+```
+cat <<EOF > json/dns-action.json
+{
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "kuard.$NAME",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "$K8S_HOSTNAME"
+          }
+        ]
+      }
+    }
+  ]
+}
+EOF
+
+export HOSTED_ZONE_ID=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name==\`$NAME.\`].Id" --output text)
+
+echo "NAME:           $NAME"
+echo "HOSTED_ZONE_ID: $HOSTED_ZONE_ID"
+
+aws route53 change-resource-record-sets \
+  --hosted-zone-id $HOSTED_ZONE_ID \
+  --change-batch file://json/dns-action.json
+```
+
+  * Check the DNS record was created.
+
+```
+aws route53 list-resource-record-sets \
+  --hosted-zone-id $HOSTED_ZONE_ID \
+  --query="ResourceRecordSets[?Name==\`kuard.$NAME.\`]"
+``
+
+* Deploy the kuard application.
 
 ```
 cat <<EOF > yaml/kuard-application.yaml
@@ -203,6 +261,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kuard
+  namespace: sandbox
 spec:
   ports:
   - port: 80
@@ -215,6 +274,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kuard
+  namespace: sandbox
 spec:
   selector:
     matchLabels:
@@ -236,16 +296,17 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: kuard
+  namespace: sandbox
   annotations:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/issuer: letsencrypt-development-issuer
 spec:
   tls:
   - hosts:
-    - kuard.va-oit.cloud
+    - kuard.$NAME
     secretName: quickstart-example-tls
   rules:
-  - host: kuard.va-oit.cloud
+  - host: kuard.$NAME
     http:
       paths:
       - path: /
@@ -253,7 +314,7 @@ spec:
           serviceName: kuard
           servicePort: 80
 EOF
-kubectl apply -f yaml/kuard-application.yaml --namespace sandbox
+kubectl apply -f yaml/kuard-application.yaml
 ```
 
 * Verify the ingress has been created. Repeat until the Address field is valid.
@@ -283,7 +344,7 @@ kubectl describe secret quickstart-example-tls --namespace sandbox
 * You should be able to visit the running `kuard` application now.
 
 ```
-https://kuard.va-oit.cloud
+firefox https://kuard.$NAME
 ```
 
 * Now update the ingress to use `production` Let's Encrypt.
@@ -294,16 +355,17 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: kuard
+  namespace: sandbox
   annotations:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/issuer: letsencrypt-production-issuer
 spec:
   tls:
   - hosts:
-    - kuard.va-oit.cloud
+    - kuard.$NAME
     secretName: quickstart-example-tls
   rules:
-  - host: kuard.va-oit.cloud
+  - host: kuard.$NAME
     http:
       paths:
       - path: /
@@ -311,7 +373,7 @@ spec:
           serviceName: kuard
           servicePort: 80
 EOF
-kubectl apply -f yaml/kuard-ingress.yaml --namespace sandbox
+kubectl apply -f yaml/kuard-ingress.yaml
 ```
 
 * Delete the existing secret. This will trigger a new certificate request.

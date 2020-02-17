@@ -9,6 +9,7 @@ These articles are listed in the order in order you should read them. Later arti
 * kops
     * [Cluster](docs/create-cluster.md)
     * [HA Cluster](docs/create-ha-cluster.md)
+* [Create sandbox namespace](docs/create-sandbox-namespace.md)
 * [Create Node application in cluster](docs/deploy-node-application.md)
 * [Deploy Certificate Manager](docs/deploy-cert-manager.md)
 * [Deploy Helm](docs/deploy-helm.md)
@@ -22,6 +23,8 @@ These articles are listed in the order in order you should read them. Later arti
 ## In Progress
 
 * [Deploy Jenkins](docs/deploy-jenkins.md)
+    * Enable HTTPS access to Jenkins.
+    * Add Node CI/CD pipeline.
 * [Deploy Docker Registry](docs/deploy-docker-registry.md)
 
 ## Research
@@ -29,13 +32,11 @@ These articles are listed in the order in order you should read them. Later arti
 * S3 for storage
 * HTTPS for security
 * Access control for isolation.
-* Add Node CI/CD pipeline.
-* Enable HTTPS access to Jenkins.
 * Enable HTTPS access to Node application.
 * Service Mesh
 * Centralized Logging (like ELK)
-* Create Java application.
-* Create Ruby applicaiton.
+* Create Java Spring Boot application.
+* Create Ruby on Rails applicaiton.
 * Run Python jobs.
 * Run Jypiter.
 * How to rollback deployments
