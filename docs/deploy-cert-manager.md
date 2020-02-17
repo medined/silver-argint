@@ -32,6 +32,12 @@ EOF
 kubectl create -f yaml/namespace-sandbox.yaml
 ```
 
+* Set the `kubectl` context so that `sandbox` is the current namespace. Undo this action by using `default` as the namespace.
+
+```
+kubectl config set-context --current --namespace=sandbox
+```
+
 * Install ingress controller. Note that `dmm` is used as a prefix.
 
 ```
@@ -47,7 +53,7 @@ echo $K8S_HOSTNAME
 
 ### Deploy Echo Application
 
-The echo serivce being deployed here just returns "silverargint" as a text response. Its simplicity makes it a great for this kind of preliminary exploration.
+The echo service being deployed here just returns "silverargint" as a text response. Its simplicity makes it a great for this kind of preliminary exploration.
 
 * Create a dummy echo server which is a small web server that returns a text message. This is called an application because it has both a service and a deployment.
 
@@ -132,7 +138,7 @@ cat <<EOF > yaml/kuard-issuer-developmemt.yaml
 apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
 metadata:
-  name: letsencrypt-development
+  name: letsencrypt-development-issuer
 spec:
   acme:
     # The ACME server URL
@@ -141,7 +147,7 @@ spec:
     email: dmedined@crimsongovernment.com
     # Name of a secret used to store the ACME account private key
     privateKeySecretRef:
-      name: letsencrypt-development
+      name: letsencrypt-development-issuer
     # Enable the HTTP-01 challenge provider
     solvers:
     - http01:
@@ -158,7 +164,7 @@ cat <<EOF > yaml/kuard-issuer-production.yaml
 apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
 metadata:
-  name: letsencrypt-production
+  name: letsencrypt-production-issuer
 spec:
   acme:
     # The ACME server URL
@@ -167,7 +173,7 @@ spec:
     email: dmedined@crimsongovernment.com
     # Name of a secret used to store the ACME account private key
     privateKeySecretRef:
-      name: letsencrypt-production
+      name: letsencrypt-production-issuer
     # Enable the HTTP-01 challenge provider
     solvers:
     - http01:
@@ -232,7 +238,7 @@ metadata:
   name: kuard
   annotations:
     kubernetes.io/ingress.class: nginx
-    cert-manager.io/issuer: letsencrypt-development
+    cert-manager.io/issuer: letsencrypt-development-issuer
 spec:
   tls:
   - hosts:
@@ -290,7 +296,7 @@ metadata:
   name: kuard
   annotations:
     kubernetes.io/ingress.class: nginx
-    cert-manager.io/issuer: letsencrypt-production
+    cert-manager.io/issuer: letsencrypt-production-issuer
 spec:
   tls:
   - hosts:
