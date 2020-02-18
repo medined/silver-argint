@@ -25,10 +25,10 @@ These articles are listed in the order in order you should read them. Later arti
 * [Deploy Jenkins](docs/deploy-jenkins.md)
     * Enable HTTPS access to Jenkins.
     * Add Node CI/CD pipeline.
-* [Deploy Docker Registry](docs/deploy-docker-registry.md)
 
 ## Research
 
+* [Deploy Harbor](docs/deploy-harbor.md)
 * S3 for storage
 * HTTPS for security
 * Access control for isolation.
@@ -81,4 +81,4 @@ These articles are listed in the order in order you should read them. Later arti
 * kured
 * locust
 * Ambassador - https://www.getambassador.io/ - Easily expose, secure, and manage traffic to your Kubernetes microservices of any type
-
+* OWASP ZAP
