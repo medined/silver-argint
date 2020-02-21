@@ -1,7 +1,6 @@
-dashboard-adminuser.yaml
-dashboard-adminuser-clusterrolebinding.yaml
 PRIVATE-NOTES.md
 json/*
 yaml/*
 harbor
-json
+Dockerfile
+log
