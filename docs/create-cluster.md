@@ -126,7 +126,26 @@ kubectl get nodes
 ssh -i ~/Downloads/$NAME.pem admin@api.$NAME
 ``
 
-* Deploy the dashboard.
+### Visit Cluster Home Page
+
+* Learn cluster URL.
+
+```
+kubectl cluster-info
+```
+
+* Learn cluster admin password.
+
+```
+kubectl config view --minify --output jsonpath="{.users[?(@.user.username=='admin')].user.password}";echo
+```
+
+* Visit the cluster URL using the `admin` username and the revealed password.
+
+
+### Dashboard Deployment
+
+* Appy the manifest.
 
 ```
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta8/aio/deploy/recommended.yaml
@@ -165,7 +184,7 @@ EOF
 kubectl apply -f yaml/dashboard-adminuser-clusterrolebinding.yaml
 ```
 
-* Get a login bearer token. Copy the token and paste it into the login screen.
+* Get a login bearer token. Copy the token and paste it into the login screen. You could also run `get-login-token.sh`.
 
 ```
 kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep admin-user | awk '{print $1}')
