@@ -29,12 +29,14 @@ The echo service being deployed here just returns "silverargint" as a text respo
 * Create a dummy echo server which is a small web server that returns a text message. This is called an application because it has both a service and a deployment.
 
 ```
+NAMESPACE=sandbox
+
 cat <<EOF > yaml/echo-application.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: echo
-  namespace: sandbox
+  namespace: $NAMESPACE
 spec:
   ports:
   - port: 80
@@ -46,7 +48,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: echo
-  namespace: sandbox
+  namespace: $NAMESPACE
 spec:
   selector:
     matchLabels:
@@ -71,13 +73,13 @@ kubectl apply -f yaml/echo-application.yaml
 * Check the service is running. You should see the `echo` service in the list.
 
 ```
-kubectl get service --namespace sandbox
+kubectl get service --namespace $NAMESPACE
 ```
 
 * Get the load balancer hostname assigned to your nginx-ingress-controller service.
 
 ```
-K8S_HOSTNAME=$(kubectl get service dmm-nginx-ingress-controller --namespace sandbox -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+K8S_HOSTNAME=$(kubectl get service dmm-nginx-ingress-controller --namespace $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 echo $K8S_HOSTNAME
 ```
 
@@ -132,7 +134,7 @@ apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: echo-ingress
-  namespace: sandbox
+  namespace: $NAMESPACE
 spec:
   rules:
   - host: echo.$NAME
@@ -161,7 +163,7 @@ apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
 metadata:
   name: letsencrypt-development-issuer
-  namespace: sandbox
+  namespace: $NAMESPACE
 spec:
   acme:
     # The ACME server URL
@@ -181,7 +183,7 @@ apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
 metadata:
   name: letsencrypt-production-issuer
-  namespace: sandbox
+  namespace: $NAMESPACE
 spec:
   acme:
     # The ACME server URL
@@ -203,7 +205,7 @@ kubectl create -f yaml/kuard-issuer.yaml
 * Check on the status of the development issuer. But entries should be ready.
 
 ```
-kubectl get issuer --namespace sandbox
+kubectl get issuer --namespace $NAMESPACE
 ```
 
 ### Deploy Kuard Application
@@ -261,7 +263,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kuard
-  namespace: sandbox
+  namespace: $NAMESPACE
 spec:
   ports:
   - port: 80
@@ -274,7 +276,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kuard
-  namespace: sandbox
+  namespace: $NAMESPACE
 spec:
   selector:
     matchLabels:
@@ -296,7 +298,7 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: kuard
-  namespace: sandbox
+  namespace: $NAMESPACE
   annotations:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/issuer: letsencrypt-development-issuer
@@ -320,25 +322,25 @@ kubectl apply -f yaml/kuard-application.yaml
 * Verify the ingress has been created. Repeat until the Address field is valid.
 
 ```
-kubectl get ingress --namespace sandbox
+kubectl get ingress --namespace $NAMESPACE
 ```
 
 * Look at the new certificate.
 
 ```
-kubectl get certificate --namespace sandbox
+kubectl get certificate --namespace $NAMESPACE
 ```
 
 * Describe the certificate. Hopefully, the last message says "Certificate issued successfully".
 
 ```
-kubectl describe certificate quickstart-example-tls --namespace sandbox
+kubectl describe certificate quickstart-example-tls --namespace $NAMESPACE
 ```
 
 * Check that a secret has been created with the details of the certificate.
 
 ```
-kubectl describe secret quickstart-example-tls --namespace sandbox
+kubectl describe secret quickstart-example-tls --namespace $NAMESPACE
 ```
 
 * You should be able to visit the running `kuard` application now.
@@ -355,7 +357,7 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: kuard
-  namespace: sandbox
+  namespace: $NAMESPACE
   annotations:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/issuer: letsencrypt-production-issuer
@@ -386,12 +388,4 @@ kubectl delete secret quickstart-example-tls --namespace sandbox
 
 ```
 kubectl describe certificate quickstart-example-tls --namespace sandbox
-```
-
-## Delete sandbox namespace
-
-```
-kubectl delete namespace sandbox
-kubectl delete clusterrole dmm-nginx-ingress
-kubectl delete ClusterRoleBinding dmm-nginx-ingress
 ```

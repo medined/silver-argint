@@ -5,33 +5,36 @@
 * Create sandbox namespace.
 
 ```
-cat <<EOF > yaml/namespace-sandbox.yaml
+
+NAMESPACE=sandbox
+
+cat <<EOF > yaml/namespace-$NAMESPACE.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: sandbox
+  name: $NAMESPACE
   labels:
-    name: sandbox
+    name: $NAMESPACE
 EOF
-kubectl create -f yaml/namespace-sandbox.yaml
+kubectl create -f yaml/namespace-$NAMESPACE.yaml
 ```
 
 * Set the `kubectl` context so that `sandbox` is the current namespace. Undo this action by using `default` as the namespace.
 
 ```
-kubectl config set-context --current --namespace=sandbox
+kubectl config set-context --current --namespace=$NAMESPACE
 ```
 
 * Install ingress controller. Note that `dmm` is used as a prefix.
 
 ```
-helm install dmm stable/nginx-ingress --namespace sandbox
+helm install dmm stable/nginx-ingress --namespace $NAMESPACE
 ```
 
 * Get the load balancer hostname assigned to your nginx-ingress-controller service.
 
 ```
-K8S_HOSTNAME=$(kubectl get service dmm-nginx-ingress-controller --namespace sandbox -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+K8S_HOSTNAME=$(kubectl get service dmm-nginx-ingress-controller --namespace $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 echo $K8S_HOSTNAME
 ```
 
@@ -44,7 +47,7 @@ dig NS $K8S_HOSTNAME
 ## Delete sandbox namespace
 
 ```
-kubectl delete namespace sandbox
+kubectl delete namespace $NAMESPACE
 kubectl delete clusterrole dmm-nginx-ingress
 kubectl delete ClusterRoleBinding dmm-nginx-ingress
 ```

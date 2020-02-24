@@ -1,10 +1,12 @@
 #!/bin/bash
 
+NAMESPACE=sandbox
+
 ./jenkins-proxy-stop.sh
 
 kubectl get pods -l "app.kubernetes.io/instance=jenkins" -o jsonpath="{.items[0].metadata.name}" > /dev/null 2>&1
 if [ $? == 0 ]; then
-    helm uninstall jenkins --namespace sandbox
+    helm uninstall jenkins --namespace $NAMESPACE
 else
   echo "###########################"
   echo "# Jenkins is not running. #"

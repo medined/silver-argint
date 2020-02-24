@@ -26,6 +26,7 @@ These articles are listed in the order in order you should read them. Later arti
 
 ## Research
 
+* https://www.serverlab.ca/tutorials/development/nodejs/containerizing-a-node-js-rest-api-for-kubernetes/ - how to handle backend secrets.
 * [Deploy Harbor](docs/deploy-harbor.md)
 * S3 for storage
 * HTTPS for security
@@ -80,3 +81,18 @@ These articles are listed in the order in order you should read them. Later arti
 * locust
 * Ambassador - https://www.getambassador.io/ - Easily expose, secure, and manage traffic to your Kubernetes microservices of any type
 * OWASP ZAP
+* https://code.visualstudio.com/docs/azure/kubernetes - k8s inside visual studio code
+* https://www.jeffgeerling.com/blog/2020/kubernetes-collection-ansible
+* https://github.com/ansible/community/wiki/Kubernetes
+* https://medium.com/faun/deploying-and-scaling-jenkins-on-kubernetes-2cd4164720bd
+* https://bitnami.com/stack/jenkins/helm
+* https://www.devtech101.com/2019/06/18/installing-jenkins-on-your-kubernets-cluster-by-using-helm-charts - pull values out of helm definition.
+* https://hub.helm.sh/charts/codecentric/jenkins - a bit better than the 'stable' version.
+* https://itnext.io/dynamic-jenkins-agent-from-kubernetes-4adb98901906
+* https://www.magalix.com/blog/magalix-kubernetes-101-series-0
+* https://www.magalix.com/blog/kubernetes-patterns-the-reflection-pattern
+* https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
+* https://www.youtube.com/watch?v=qmDzcu5uY1I
+* https://k3s.io/
+* wildcard subdomain in route53?
+* https://www.alibabacloud.com/blog/kubernetes-volume-basics-emptydir-and-persistentvolume_594834
