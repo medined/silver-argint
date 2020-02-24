@@ -40,6 +40,7 @@ cat <<EOF > json/dns-action.json
 }
 EOF
 
+export HOSTED_ZONE_NAME=va-oit.cloud
 export HOSTED_ZONE_ID=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name==\`$NAME.\`].Id" --output text)
 
 echo "NAME:           $NAME"
@@ -101,6 +102,11 @@ kubectl describe certificate docker-registry
 
 ```
 PASSWORD=$(uuid)
+
+# Store the password for future use. This file is ignored by git.
+echo $PASSWORD > password-docker-registry.txt
+chmod 600 password-docker-registry.txt
+
 docker pull registry:2
 HTPASSWORD=$(docker run --entrypoint htpasswd --rm registry:2 -Bbn admin $PASSWORD | base64 --wrap 92)
 echo "ADMIN Password: $PASSWORD"
@@ -275,3 +281,5 @@ docker push $REGISTRY_HOST/busybox:latest
 curl -u admin:$PASSWORD https://$REGISTRY_HOST/v2/_catalog
 {"repositories":["busybox"]}
 ```
+
+* The script `docker-registry-login.sh` can be used to automatically log into the registry.

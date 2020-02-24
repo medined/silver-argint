@@ -4,7 +4,7 @@
 
 * https://learnk8s.io/nodejs-kubernetes-guide
 
-## Version 1
+## Run Locally
 
 * Install nvm, the node version manager
 
@@ -55,7 +55,7 @@ sudo systemctl stop mongod
 
 * Stop mongo.
 
-## Version 2
+## Run Locally As Containers
 
 * Install Docker. Go ahead. Come back when you are done.
 
@@ -138,7 +138,7 @@ docker run \
 docker stop mongo knote
 ```
 
-## Version 3
+## Run Inside Kubernetes
 
 * Start a kubernetes cluster. 
 

@@ -10,7 +10,7 @@ These articles are listed in the order in order you should read them. Later arti
     * [Cluster](docs/create-cluster.md)
     * [HA Cluster](docs/create-ha-cluster.md)
 * [Create sandbox namespace](docs/create-sandbox-namespace.md)
-* [Create Node application in cluster](docs/deploy-node-application.md)
+* [Create Node application](docs/deploy-node-application_v1.md)
 * [Deploy Certificate Manager](docs/deploy-cert-manager.md)
 * [Deploy Helm](docs/deploy-helm.md)
 * Databases
@@ -19,12 +19,10 @@ These articles are listed in the order in order you should read them. Later arti
     * [Deploy Redis](docs/deploy-redis.md)
 * [Deploy Public Docker Registry](docs/deploy-public-docker-registry.md)
 * [Deploy Nginx](docs/deploy-nginx.md)
+* [Deploy Jenkins](docs/deploy-jenkins.md)
+* [Update Jenkins With Cluster Credentials](docs/update-jenkins-with-cluster-credentials.md)
 
 ## In Progress
-
-* [Deploy Jenkins](docs/deploy-jenkins.md)
-    * Enable HTTPS access to Jenkins.
-    * Add Node CI/CD pipeline.
 
 ## Research
 

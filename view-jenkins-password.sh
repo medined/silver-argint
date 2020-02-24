@@ -1,1 +1,0 @@
-run-jenkins-proxy.sh
