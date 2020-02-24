@@ -2,6 +2,14 @@
 
 This project documents my exploration into [kubernets](https://kubernetes.io/). Each goal shown below is fairly simple and intended to be short and declarative. You'll need to read the orginal source material by following the links in each article to learn context.
 
+Before reading any of the material here, I suggest the short courses at katacoda.com. You can click on the shell commands in order to run them.
+
+* https://www.youtube.com/watch?v=PH-2FfFD2PU - Concepts in 5 minutes
+* https://medium.com/google-cloud/kubernetes-nodeport-vs-loadbalancer-vs-ingress-when-should-i-use-what-922f010849e0
+* https://www.katacoda.com/courses/kubernetes/launch-single-node-cluster
+* https://www.katacoda.com/courses/kubernetes/kubectl-run-containers
+* https://www.katacoda.com/courses/kubernetes/creating-kubernetes-yaml-definitions
+
 ## Notes
 
 These articles are listed in the order in order you should read them. Later articles uses the K8S resources created in earlier articles.
