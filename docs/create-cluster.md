@@ -124,7 +124,7 @@ kubectl get nodes
 
 ```
 ssh -i ~/Downloads/$NAME.pem admin@api.$NAME
-``
+```
 
 ### Visit Cluster Home Page
 

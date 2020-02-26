@@ -124,7 +124,7 @@ aws route53 change-resource-record-sets \
 aws route53 list-resource-record-sets \
   --hosted-zone-id $HOSTED_ZONE_ID \
   --query="ResourceRecordSets[?Name==\`echo.$NAME.\`]"
-``
+```
 
 * Route traffic directed at the `echo` subdomain within the cluster.
 

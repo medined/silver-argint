@@ -39,7 +39,8 @@ To connect to your database:
     $ apt-get update && apt-get install mysql-client -y
 
 3. Connect using the mysql cli, then provide your password:
-    $ mysql -h mysql-1581810862 -p
+
+    mysql -h mysql-1581810862 -p
 
 To connect to your database directly from outside the K8s cluster:
     MYSQL_HOST=127.0.0.1

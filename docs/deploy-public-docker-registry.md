@@ -58,7 +58,7 @@ aws route53 change-resource-record-sets \
 aws route53 list-resource-record-sets \
   --hosted-zone-id $HOSTED_ZONE_ID \
   --query="ResourceRecordSets[?Name==\`registry.$NAME.\`]"
-``
+```
 
 * Export some variables to parameterize later steps.
 

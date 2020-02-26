@@ -76,7 +76,9 @@ node {
   }
 }
 ```
-    * Click Save.
+
+* Click Save.
+
 * Click Build Now.
 
 ### Creating a Jenkins Job With Pipeline From GitHub project.

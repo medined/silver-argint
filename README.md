@@ -5,6 +5,7 @@ This project documents my exploration into [kubernets](https://kubernetes.io/). 
 Before reading any of the material here, I suggest the short courses at katacoda.com. You can click on the shell commands in order to run them.
 
 * https://www.youtube.com/watch?v=PH-2FfFD2PU - Concepts in 5 minutes
+* https://cloud.google.com/kubernetes-engine/kubernetes-comic
 * https://medium.com/google-cloud/kubernetes-nodeport-vs-loadbalancer-vs-ingress-when-should-i-use-what-922f010849e0
 * https://www.katacoda.com/courses/kubernetes/launch-single-node-cluster
 * https://www.katacoda.com/courses/kubernetes/kubectl-run-containers
@@ -18,7 +19,7 @@ These articles are listed in the order in order you should read them. Later arti
     * [Cluster](docs/create-cluster.md)
     * [HA Cluster](docs/create-ha-cluster.md)
 * [Create sandbox namespace](docs/create-sandbox-namespace.md)
-* [Create Node application](docs/deploy-node-application_v1.md)
+* [Create Node application](docs/create-node-application.md)
 * [Deploy Certificate Manager](docs/deploy-cert-manager.md)
 * [Deploy Helm](docs/deploy-helm.md)
 * Databases
