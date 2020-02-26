@@ -17,48 +17,7 @@ curl -u user:pass https://registry.va-oit.cloud/v2/catalog
 
 ## Steps
 
-  * Define the DNS action which is inserting or updating the echo hostname.
-
-```
-cat <<EOF > json/dns-action.json
-{
-  "Changes": [
-    {
-      "Action": "UPSERT",
-      "ResourceRecordSet": {
-        "Name": "registry.$NAME",
-        "Type": "CNAME",
-        "TTL": 300,
-        "ResourceRecords": [
-          {
-            "Value": "$K8S_HOSTNAME"
-          }
-        ]
-      }
-    }
-  ]
-}
-EOF
-
-export HOSTED_ZONE_NAME=va-oit.cloud
-export HOSTED_ZONE_ID=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name==\`$NAME.\`].Id" --output text)
-
-echo "NAME:           $NAME"
-echo "HOSTED_ZONE_ID: $HOSTED_ZONE_ID"
-echo "K8S_HOSTNAME:   $K8S_HOSTNAME"
-
-aws route53 change-resource-record-sets \
-  --hosted-zone-id $HOSTED_ZONE_ID \
-  --change-batch file://json/dns-action.json
-```
-
-* Check the DNS record was created.
-
-```
-aws route53 list-resource-record-sets \
-  --hosted-zone-id $HOSTED_ZONE_ID \
-  --query="ResourceRecordSets[?Name==\`registry.$NAME.\`]"
-```
+* Create a vanity URL using the steps [here](create-vanity-url.md). Use `registry` as the service name.
 
 * Export some variables to parameterize later steps.
 

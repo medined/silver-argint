@@ -83,48 +83,7 @@ K8S_HOSTNAME=$(kubectl get service dmm-nginx-ingress-controller --namespace $NAM
 echo $K8S_HOSTNAME
 ```
 
-* Create a vanity URL for the echo service.
-
-  * Define the DNS action which is inserting or updating the echo hostname.
-
-```
-cat <<EOF > json/dns-action.json
-{
-  "Changes": [
-    {
-      "Action": "UPSERT",
-      "ResourceRecordSet": {
-        "Name": "echo.$NAME",
-        "Type": "CNAME",
-        "TTL": 300,
-        "ResourceRecords": [
-          {
-            "Value": "$K8S_HOSTNAME"
-          }
-        ]
-      }
-    }
-  ]
-}
-EOF
-
-export HOSTED_ZONE_ID=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name==\`$NAME.\`].Id" --output text)
-
-echo "NAME:           $NAME"
-echo "HOSTED_ZONE_ID: $HOSTED_ZONE_ID"
-
-aws route53 change-resource-record-sets \
-  --hosted-zone-id $HOSTED_ZONE_ID \
-  --change-batch file://json/dns-action.json
-```
-
-* Check the DNS record was created.
-
-```
-aws route53 list-resource-record-sets \
-  --hosted-zone-id $HOSTED_ZONE_ID \
-  --query="ResourceRecordSets[?Name==\`echo.$NAME.\`]"
-```
+* Create a vanity URL for the echo service using the steps [here](create-vanity-url.md). Use `echo` as the service name.
 
 * Route traffic directed at the `echo` subdomain within the cluster.
 
@@ -212,48 +171,7 @@ kubectl get issuer --namespace $NAMESPACE
 
 Kuard is a demonstration application from the "Kubernetes Up and Running" book. It is another example how to deploy an application.
 
-* Create a vanity URL for the Kuard service.
-
-  * Define the DNS action which is inserting or updating the echo hostname.
-
-```
-cat <<EOF > json/dns-action.json
-{
-  "Changes": [
-    {
-      "Action": "UPSERT",
-      "ResourceRecordSet": {
-        "Name": "kuard.$NAME",
-        "Type": "CNAME",
-        "TTL": 300,
-        "ResourceRecords": [
-          {
-            "Value": "$K8S_HOSTNAME"
-          }
-        ]
-      }
-    }
-  ]
-}
-EOF
-
-export HOSTED_ZONE_ID=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name==\`$NAME.\`].Id" --output text)
-
-echo "NAME:           $NAME"
-echo "HOSTED_ZONE_ID: $HOSTED_ZONE_ID"
-
-aws route53 change-resource-record-sets \
-  --hosted-zone-id $HOSTED_ZONE_ID \
-  --change-batch file://json/dns-action.json
-```
-
-  * Check the DNS record was created.
-
-```
-aws route53 list-resource-record-sets \
-  --hosted-zone-id $HOSTED_ZONE_ID \
-  --query="ResourceRecordSets[?Name==\`kuard.$NAME.\`]"
-``
+* Create a vanity URL using the steps [here](create-vanity-url.md). Use `kuard` as the service name.
 
 * Deploy the kuard application.
 

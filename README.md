@@ -14,7 +14,7 @@ Before reading any of the material here, I suggest the short courses at katacoda
 ## Notes
 
 These articles are listed in the order in order you should read them. Later articles uses the K8S resources created in earlier articles.
-
+ 
 * kops
     * [Cluster](docs/create-cluster.md)
     * [HA Cluster](docs/create-ha-cluster.md)
