@@ -21,7 +21,11 @@ EOF
 
 kubectl apply -f yaml/shell-demo.yaml
 
-kubectl get pod shell-demo
+echo "---------------------------------"
+echo "| Press ^C when pod is running. |"
+echo "---------------------------------"
+
+kubectl get pod shell-demo -w
 
 kubectl exec -it shell-demo -- /bin/bash
 
