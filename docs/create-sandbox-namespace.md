@@ -25,6 +25,8 @@ kubectl create -f yaml/namespace-$NAMESPACE.yaml
 kubectl config set-context --current --namespace=$NAMESPACE
 ```
 
+*  NOTE: Remove ingress controller steps.
+
 * Install ingress controller. Note that `dmm` is used as a prefix.
 
 ```

@@ -130,10 +130,13 @@ else
     echo "local kops public key: Created"
 fi
 
+COREOS_AMI=$(curl -s https://coreos.com/dist/aws/aws-stable.json | jq -r '.["us-east-1"].hvm')
+
 echo "kubernetes cluster: Creating"
 
 $HOME/bin/kops create cluster \
   --cloud=aws \
+  --image $COREOS_AMI \
   --ssh-public-key $PUB_FILE \
   --yes \
   --zones=$AWS_ZONE \

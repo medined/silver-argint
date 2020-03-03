@@ -18,6 +18,7 @@ These articles are listed in the order in order you should read them. Later arti
 * kops
     * [Cluster](docs/create-cluster.md)
     * [HA Cluster](docs/create-ha-cluster.md)
+* [Deploy Dashboard](docs/deploy-dashboard.md)
 * [Create sandbox namespace](docs/create-sandbox-namespace.md)
 * [Run a shell inside the cluster](docs/run-shell-inside-cluster.md)
 * [Create Node application](docs/create-node-application.md)
@@ -107,8 +108,7 @@ These articles are listed in the order in order you should read them. Later arti
 * https://k3s.io/
 * wildcard subdomain in route53?
 * https://www.alibabacloud.com/blog/kubernetes-volume-basics-emptydir-and-persistentvolume_594834
-<<<<<<< Updated upstream
-=======
+
 * https://cloudowski.com/articles/why-vault-and-kubernetes-is-the-perfect-couple/
 
 https://www.youtube.com/channel/UCvqbFHwN-nwalWPjPUKpvTA/playlists - Cloud Native Cloud Formation
@@ -191,4 +191,17 @@ curl -s https://coreos.com/dist/aws/aws-stable.json | jq -r '.["us-east-1"].hvm'
 or
 Similarly, setting an ENV VAR or in a shell script 
 AMI_ID=`curl -s https://coreos.com/dist/aws/aws-stable.json | jq -r '.["us-east-1"].hvm’`
->>>>>>> Stashed changes
+
+## Notes
+
+* https://www.oit.va.gov/library/recurring/edp/ - the team behind the kubernetes research.
+
+## Research
+
+* https://medium.com/faun/how-to-setup-a-perfect-kubernetes-cluster-using-kops-in-aws-b616bdfae013 - cluster with 3 master nodes and 2 worker nodes with 1 AWS On-demand instance and 1 AWS Spot instance within a private topology with multi-availability zones deployment.
+* https://garden.io/ - garden automates the repetitive parts of your workflow to make developing for Kubernetes and cloud faster and easier.
+* https://okteto.com/ - Development platform for Kubernetes applications. Build better applications by developing and testing your code directly in Kubernetes.
+* https://blog.alexellis.io/a-bit-of-istio-before-tea-time/ - Istio demo up and running with a public IP directly to your laptop.
+* https://www.youtube.com/watch?v=8JbGfNNG1mQ - kubernetes team live stream
+* https://github.com/kubernetes-sigs/kubespray - Deploy a Production Ready Kubernetes Cluster
+* https://kind.sigs.k8s.io/ - running local Kubernetes clusters using Docker container “nodes”.
