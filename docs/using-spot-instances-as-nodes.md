@@ -2,6 +2,8 @@
 
 ## Introduction
 
+Amazon EC2 Spot Instances let you take advantage of unused EC2 capacity in the AWS cloud. Spot Instances are available at up to a 90% discount compared to On-Demand prices. 
+
 `kops` lets you manage groups of nodes as a single unit called an instance group. This feature lets you create an instance group that consists of spot instances. When you want to run work specifically on the spot instance, a node selector tell k8s your intention.
 
 ## Configuration
