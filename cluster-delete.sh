@@ -26,11 +26,9 @@ KOPS_STATE_STORE="s3://$DOMAIN_NAME_SAFE-$(echo -n $DOMAIN_NAME | sha256sum | cu
 
 echo "kubernetes cluster: Deleting"
 
-if [ $DOMAIN_NAME == "va-oit.cloud" ]; then
-  echo "Do not delete the original cluster."
-  exit
-fi
+$HOME/bin/kops delete cluster --yes $DOMAIN_NAME
 
-$HOME/bin/kops delete cluster \
-  --yes \
-  $DOMAIN_NAME
+$HOME/bin/kubectl config delete-cluster $DOMAIN_NAME
+$HOME/bin/kubectl config unset users.$DOMAIN_NAME
+$HOME/bin/kubectl config unset users.$DOMAIN_NAME-basic-auth
+$HOME/bin/kubectl config unset contexts.$DOMAIN_NAME
