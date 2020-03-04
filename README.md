@@ -19,6 +19,7 @@ These articles are listed in the order in order you should read them. Later arti
     * [Cluster](docs/create-cluster.md)
     * [HA Cluster](docs/create-ha-cluster.md)
     * [Add/Remove a Node](docs/kops-add-node-to-cluster.md)
+    * [Using Spot Instances](docs/using-spot-instances-as-nodes.md)
 * [Deploy Dashboard](docs/deploy-dashboard.md)
 * [Create sandbox namespace](docs/create-sandbox-namespace.md)
 * [Run a shell inside the cluster](docs/run-shell-inside-cluster.md)

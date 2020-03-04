@@ -20,8 +20,8 @@ spec:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-  hostNetwork: true
   dnsPolicy: Default
+  hostNetwork: true
   restartPolicy: Never
 EOF
 
