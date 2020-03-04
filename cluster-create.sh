@@ -1,37 +1,52 @@
 #!/bin/bash
 
+(return 0 2>/dev/null) && SOURCED=1 || SOURCED=0
+if [ "$SOURCED" == "0" ]; then
+  echo "ERROR: Please source this script."
+  exit
+fi
+
 if [ $# -ne 2 ]; then
   echo "Usage: -f [configuration file]"
-  exit
+  return
 fi
 
 if [ "$1" != "-f" ]; then
     echo "ERROR: Expecting -f parameter."
-    exit
+    return
 fi
+
 
 ENV_FILE=$2
 source $ENV_FILE
 
 if [ -z $AWS_ACCESS_KEY_ID ]; then
   echo "ERROR: Missing environment variable: AWS_ACCESS_KEY_ID"
-  exit
+  return
 fi
 if [ -z $AWS_SECRET_ACCESS_KEY ]; then
   echo "ERROR: Missing environment variable: AWS_SECRET_ACCESS_KEY"
-  exit
+  return
 fi
 if [ -z $AWS_REGION ]; then
   echo "ERROR: Missing environment variable: AWS_REGION"
-  exit
+  return
 fi
-if [ -z $AWS_ZONE ]; then
-  echo "ERROR: Missing environment variable: AWS_ZONE"
-  exit
+if [ -z $AWS_ZONES ]; then
+  echo "ERROR: Missing environment variable: AWS_ZONES"
+  return
 fi
 if [ -z $DOMAIN_NAME ]; then
   echo "ERROR: Missing environment variable: DOMAIN_NAME"
-  exit
+  return
+fi
+if [ -z $MASTER_ZONES ]; then
+  echo "ERROR: Missing environment variable: MASTER_ZONES"
+  return
+fi
+if [ -z $NODE_COUNT ]; then
+  echo "ERROR: Missing environment variable: NODE_COUNT"
+  return
 fi
 
 # Does a bin directory exist in the user's home directory? This is where
@@ -83,18 +98,6 @@ else
     echo "s3 kops state store: Created"
 fi
 
-echo "AWS_ACCESS_KEY_ID:     $AWS_ACCESS_KEY_ID"
-echo "AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY"
-echo "AWS_REGION:            $AWS_REGION"
-echo "DOMAIN_NAME:           $DOMAIN_NAME"
-echo "PEM_FILE:              $PEM_FILE"
-echo "PUB_FILE:              $PUB_FILE"
-echo "----------"
-echo "DOMAIN_NAME_S3:        $DOMAIN_NAME_S3"
-echo "KOPS_STATE_STORE:      $KOPS_STATE_STORE"
-echo "kubectl version:       $(kubectl version --client)"
-echo "kops version:          $(kops version)"
-
 # If the S3 object does not exist, then create the key pair.
 aws s3 ls $DOMAIN_NAME_S3/$DOMAIN_NAME_SAFE.pem >/dev/null 2>&1
 if [ $? == 0 ]; then
@@ -137,16 +140,25 @@ echo "kubernetes cluster: Creating"
 $HOME/bin/kops create cluster \
   --cloud=aws \
   --image $COREOS_AMI \
+  --master-zones=$MASTER_ZONES \
+  --node-count=$NODE_COUNT \
   --ssh-public-key $PUB_FILE \
   --yes \
-  --zones=$AWS_ZONE \
+  --zones=$AWS_ZONES \
   $DOMAIN_NAME
 
-echo "--------------------------------------------------------------------------------"
-echo "--------------------------------------------------------------------------------"
-echo "|| Run the following command so kubectl connects to the $DOMAIN_NAME cluster: ||"
-echo "|| KOPS_STATE_STORE=$KOPS_STATE_STORE"
-echo "--------------------------------------------------------------------------------"
-echo "--------------------------------------------------------------------------------"
-echo "Continue to run 'kops validate cluster' until you see 'Your cluster $DOMAIN_NAME is ready'."
-echo "----------"
+RED='\033[0;31m'
+NC='\033[0m'
+
+while [ "$(kubectl get nodes 2>/dev/null | grep -v STATUS | awk '{print $2}' | sort -u | wc -l)" != "1" ]
+do
+  NOW=$(date '+%Y-%m-%d %H:%M:%S')
+  echo "${RED}$NOW: Waiting 60 seconds for nodes to be ready. Expect errors below.${NC}"
+  kops validate cluster
+  kubectl get nodes
+  sleep 60
+done
+
+
+kops validate cluster
+kubectl get nodes

@@ -1,41 +1,31 @@
 #!/bin/bash
 
+(return 0 2>/dev/null) && SOURCED=1 || SOURCED=0
+if [ "$SOURCED" == "0" ]; then
+  echo "ERROR: Please source this script."
+  exit
+fi
+
 # This script set the context and KOPS_STATE_STORE. It must be 
 # sourced so that KOPS_STATE_STORE is set into the calling
 # environment.
 
 if [ $# -ne 2 ]; then
   echo "Usage: -f [configuration file]"
-  exit
+  return
 fi
 
 if [ "$1" != "-f" ]; then
     echo "ERROR: Expecting -f parameter."
-    exit
+    return
 fi
 
 ENV_FILE=$2
 source $ENV_FILE
 
-if [ -z $AWS_ACCESS_KEY_ID ]; then
-  echo "ERROR: Missing environment variable: AWS_ACCESS_KEY_ID"
-  exit
-fi
-if [ -z $AWS_SECRET_ACCESS_KEY ]; then
-  echo "ERROR: Missing environment variable: AWS_SECRET_ACCESS_KEY"
-  exit
-fi
-if [ -z $AWS_REGION ]; then
-  echo "ERROR: Missing environment variable: AWS_REGION"
-  exit
-fi
-if [ -z $AWS_ZONE ]; then
-  echo "ERROR: Missing environment variable: AWS_ZONE"
-  exit
-fi
 if [ -z $DOMAIN_NAME ]; then
   echo "ERROR: Missing environment variable: DOMAIN_NAME"
-  exit
+  return
 fi
 
 # The va-oit.cloud domain is not using the naming convention.

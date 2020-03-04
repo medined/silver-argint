@@ -2,7 +2,7 @@
 
 RANDOMIZER=$(uuid | cut -b-5)
 POD_NAME="bash-shell-$RANDOMIZER"
-IMAGE=centos
+IMAGE=medined/jnlp-slave-nodejs:13
 
 cat <<EOF > yaml/shell-demo.yaml
 apiVersion: v1
@@ -15,11 +15,6 @@ spec:
     image: $IMAGE
     command: ["/bin/bash"]
     args: ["-c", "while true; do date; sleep 5; done"]
-    env:
-    - name: NODE_NAME
-      valueFrom:
-        fieldRef:
-          fieldPath: spec.nodeName
   hostNetwork: true
   dnsPolicy: Default
   restartPolicy: Never
