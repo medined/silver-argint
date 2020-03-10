@@ -2,31 +2,23 @@
 
 This project documents my exploration into [kubernets](https://kubernetes.io/). Each goal shown below is fairly simple and intended to be short and declarative. You'll need to read the orginal source material by following the links in each article to learn context.
 
-Before reading any of the material here, I suggest the short courses at katacoda.com. You can click on the shell commands in order to run them.
-
-* https://www.youtube.com/watch?v=PH-2FfFD2PU - Concepts in 5 minutes
-* https://cloud.google.com/kubernetes-engine/kubernetes-comic
-* https://medium.com/google-cloud/kubernetes-nodeport-vs-loadbalancer-vs-ingress-when-should-i-use-what-922f010849e0
-* https://www.katacoda.com/courses/kubernetes/launch-single-node-cluster
-* https://www.katacoda.com/courses/kubernetes/kubectl-run-containers
-* https://www.katacoda.com/courses/kubernetes/creating-kubernetes-yaml-definitions
-
 ## Notes
 
 These articles are listed in the order in order you should read them. Later articles uses the K8S resources created in earlier articles.
 
+* [Gentle Intro To Kubernetes](docs/gentle_introduction.md)
 * [Curated Videos From Cloud Native Computing Foundation](docs/currated_video_list.md)
 * kops
     * [Cluster](docs/create-cluster.md)
-    * [HA Cluster](docs/create-ha-cluster.md)
+    * [HA Cluster](docs/create-ha-cluster.md) - three masters and two nodes.
     * [Add/Remove a Node](docs/kops-add-node-to-cluster.md)
     * [Using Spot Instances](docs/using-spot-instances-as-nodes.md)
-* [Deploy Dashboard](docs/deploy-dashboard.md)
+* [Deploy Dashboard](docs/deploy-dashboard.md) - insight into k8s resources.
 * [Create sandbox namespace](docs/create-sandbox-namespace.md)
 * [Run a shell inside the cluster](docs/run-shell-inside-cluster.md)
 * [Create Node application](docs/create-node-application.md)
 * [Deploy Certificate Manager](docs/deploy-cert-manager.md)
-* [Deploy Helm](docs/deploy-helm.md)
+* [Deploy Helm](docs/deploy-helm.md) - a package manager for k8s.
 * Databases
     * [Deploy MySQL](docs/deploy-mysql.md)
     * [Deploy PostgreSQL](docs/deploy-postgresql.md)
