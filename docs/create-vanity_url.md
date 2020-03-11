@@ -4,19 +4,27 @@ When a LoadBalancer service is used to expose a service to the internet. Load ba
 
 Remember that domains transcend AWS, they are availabe world-wide and provide a target for hackers. Anytime that you only your cluster to the outside, careful consideration to security needs must be made.
 
-# Steps
+## Scripted Process
+
+```
+DOMAIN_NAME=va-oit.cloud
+SERVICE_NAME=registry
+./create-vanity-url.sh $SERVICE_NAME $DOMAIN_NAME
+```
+
+## Manual Process
 
 * First, define the Route53 domain you'll be working with.
 
 ```
-export NAME=va-oit.cloud
+export DOMAIN_NAME=va-oit.cloud
 ```
 
 * Define the service that will be exposed. This is the name of the subdomain you'll be creating.
 
 ```
 export SERVICE_NAME=registry
-export NEW_DOMAIN_NAME="$SERVICE_NAME.$NAME"
+export NEW_DOMAIN_NAME="$SERVICE_NAME.$DOMAIN_NAME"
 ```
 
 * Now get the hosted zone id. For example, `/hostedzone/Z12M6H9O4AVOV1`
@@ -24,10 +32,17 @@ export NEW_DOMAIN_NAME="$SERVICE_NAME.$NAME"
 ```
 export HOSTED_ZONE_ID=$( \
   aws route53 list-hosted-zones-by-name \
-    --query "HostedZones[?Name==\`$NAME.\`].Id" \
+    --query "HostedZones[?Name==\`$DOMAIN_NAME.\`].Id" \
     --output text \
 )
 echo "HOSTED_ZONE_ID: $HOSTED_ZONE_ID"
+```
+
+* Get the load balancer hostname assigned to your nginx-ingress-controller service.
+
+```
+K8S_HOSTNAME=$(kubectl get service dmm-nginx-ingress-controller --namespace $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+echo $K8S_HOSTNAME
 ```
 
 * Define the DNS action which is inserting or updating the echo hostname.

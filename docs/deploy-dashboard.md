@@ -1,6 +1,21 @@
 # Deploy Dashboard
 
-## Steps
+There is a standard Dashboard that provides great insight into the workings of a cluster. However, it is not installed by default.
+
+Learn more about the dashboard at https://github.com/kubernetes/dashboard.
+
+An installed dashboard does not have an endpoint exposed on the internet. This would provide an attack surface for hackers. Instead, you open a local proxy on port 8081 and use localhost.
+
+## Scripted Process
+
+The `dashboard-proxy-start.sh` will install the dashboard and start the proxy as a background process. The `dashboard-proxy-stop.sh` script will kill the proxy. If you are using a laptop, you may need to stop and the start after your laptop suspends. 
+
+```
+./dashboard-proxy-start.sh
+./dashboard-proxy-stop.sh
+```
+
+## Manual Process
 
 * Appy the manifest.
 

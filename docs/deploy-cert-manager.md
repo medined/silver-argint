@@ -13,6 +13,8 @@ This document shows how to use cert-manager in a sandbox namespace.
 
 * [Create sandbox Namespace](create-sandbox-namespace.md)
 
+While the instructions show how to create a namespace named `sandbox`, please create uniquely-named namespace so that your work does not interfere anyone else.
+
 ## Steps
 
 * Install certificate manager.
@@ -29,6 +31,7 @@ The echo service being deployed here just returns "silverargint" as a text respo
 * Create a dummy echo server which is a small web server that returns a text message. This is called an application because it has both a service and a deployment.
 
 ```
+# Update this assignment to use your uniquely-named namespace.
 NAMESPACE=sandbox
 
 cat <<EOF > yaml/echo-application.yaml

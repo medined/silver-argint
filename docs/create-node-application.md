@@ -2,9 +2,11 @@
 
 ## Links
 
-* https://learnk8s.io/nodejs-kubernetes-guide
+* https://www.tutorialspoint.com/nodejs/nodejs_first_application.htm
 
 ## Run Locally
+
+### Install Simple NodeJS Web Server
 
 * Install nvm, the node version manager
 
@@ -17,21 +19,12 @@ export NVM_DIR="/home/medined/.nvm"
 nvm install stable
 ```
 
-* Install Mongo database. In this case, Mongo is not being enabled or started. It will not be started after a reboot. You'll start it later.
+* Create Project.
 
 ```
-sudo apt-get install -y gnupg
-wget -qO - https://www.mongodb.org/static/pgp/server-4.2.asc | sudo apt-key add -
-echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.2.list
-sudo apt-get update -y
-sudo apt-get install -y mongodb-org
-```
-
-* Clone project.
-
-```
-git clone https://github.com/learnk8s/knote-js
-cd knote-js/01
+cd /data/projects
+git clone https://github.com/medined/simple-nodejs.git
+cd simple-nodejs
 ```
 
 * Install the project.
@@ -43,62 +36,41 @@ npm install
 * Start the application.
 
 ```
-sudo systemctl start mongod
-node index.js
+node main.js
 ```
 
 * Stop the application using ^c.
-
-```
-sudo systemctl stop mongod
-```
-
-* Stop mongo.
 
 ## Run Locally As Containers
 
 * Install Docker. Go ahead. Come back when you are done.
 
-* Switch to `knote-js/02`.
-
 * Build an image of the application.
 
 ```
-docker build -t knote .
+docker build -t simple-nodejs:0.0.1 .
 ```
 
-* Create a Docker network.
+* Run the image.
 
 ```
-docker network create knote
+docker run --name simple-nodejs -p 9999:9999 -d simple-nodejs:0.0.1
 ```
 
-* Run mongo inside a container. This process will keep running.
+* Check the web server is running.
 
 ```
-docker run \
-  --name=mongo \
-  --rm \
-  --network=knote mongo
+curl http://localhost:9999; echo
 ```
 
-* Run the node application inside another container.
+* Stop and remove the container.
 
 ```
-docker run \
-  --name=knote \
-  --rm \
-  --network=knote \
-  -p 3000:3000 \
-  -e MONGO_URL=mongodb://mongo:27017/dev \
-  knote
+docker stop simple-nodejs
+docker rm simple-nodejs
 ```
 
-* Stop both containers.
-
-```
-docker stop mongo knote
-```
+### Push Image To Docker Registry
 
 * Create a ID at https://hub.docker.com/signup.
 
@@ -111,54 +83,141 @@ docker login
 * Tag the image with your Docker Id. Mine is 'medined'. Then push it.
 
 ```
-docker tag knote medined/knote-js:1.0.0
-docker push medined/knote-js:1.0.0
+docker tag simple-nodejs:0.0.1 medined/simple-nodejs:0.0.1
+docker push medined/simple-nodejs:0.0.1
 ```
 
 * Rerun the application using the image at Docker Hub.
 
 ```
-docker run \
-  --name=mongo \
-  --rm \
-  --network=knote \
-  mongo
-docker run \
-  --name=knote \
-  --rm \
-  --network=knote \
-  -p 3000:3000 \
-  -e MONGO_URL=mongodb://mongo:27017/dev \
-  medined/knote-js:1.0.0
+docker run --name simple-nodejs -p 9999:9999 -d medined/simple-nodejs:0.0.1
 ```
 
-* Stop both containers.
+* Check the web server is running.
 
 ```
-docker stop mongo knote
+curl http://localhost:9999; echo
 ```
 
-## Run Inside Kubernetes
-
-* Start a kubernetes cluster. 
-
-* Switch to `knote-js/03`.
-
-* Review kube/knote.yaml and kube/mongo.yaml.
-
-* Deploy the application to the cluster.
+* Stop and remove the container.
 
 ```
-kubectl apply -f kube
+docker stop simple-nodejs
+docker rm simple-nodejs
 ```
 
-* View the application by visiting the Kubernetes Dashboard. Then clicking Services. Then clicking on the External Endpoint for the knote service.
+### Run Web Server As Pod
 
-* Scale the deployment.
+This section will run the nodejs server in a single pod in the cluster. It won't be scalable but it will respond to HTTP requests.
+
+* Create a pod to run the image. Note the following:
+  * The port matches the exposed port in the Dockerfile.
+  * The image matches the image pushed to the Docker registry.
+  * The label will be used as a selector so it should be specific.
 
 ```
-kubectl scale --replicas=2 deployment/knote
+cat <<EOF > yaml/simple-nodejs-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simple-nodejs-pod
+  labels:
+    app: simple-nodejs
+spec:
+  containers:
+  - name: simple-nodejs
+    image: medined/simple-nodejs:0.0.1
+    ports:
+    - containerPort: 9999
+EOF
+kubectl apply -f yaml/simple-nodejs-pod.yaml
 ```
 
-* At this point, the application is storing images on the local file system. Therefore, if you upload an image and reload the page a few times it only be shown 50% of the time. Since information is stored locally on the server, this is a stateful application.
+* Expose the application using a load balancer. Note that port 80 is exposed on the internet and forwarded to the internal target port. The selector points to the pod created above.
 
+```
+cat <<EOF > yaml/simple-nodejs-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: simple-nodejs-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: simple-nodejs
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 9999
+EOF
+kubectl apply -f yaml/simple-nodejs-service.yaml
+```
+
+* Find the load balancer endpoint.
+
+```
+kubectl get services simple-nodejs-service
+```
+
+* Use `dig` to wait for the load balancer to become available. When you see two IP addresses in the ANSWER section, it's good to receive requests.
+
+* Use `curl` to test the application is running.
+
+```
+curl http://a268f64da0dfd4026910ab2f14379e61-1001451684.us-east-1.elb.amazonaws.com; echo
+Hello World
+```
+
+* Delete the service and pod.
+
+```
+kubectl delete -f yaml/simple-nodejs-pod.yaml
+kubectl delete -f yaml/simple-nodejs-service.yaml
+```
+
+### Run Web Server As Depoyment
+
+In the manifest below, the selector field defines how the deployment finds which pods to manage. In this case, the match matches the label also defined in the manifest.
+
+```
+cat <<EOF > yaml/simple-nodejs-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-nodejs-deployment
+  labels:
+    app: simple-nodejs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: simple-nodejs
+  template:
+    metadata:
+      labels:
+        app: simple-nodejs
+    spec:
+      containers:
+        - name: simple-nodejs
+          image: medined/simple-nodejs:0.0.1
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 9999
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simple-nodejs-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: simple-nodejs
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 9999
+EOF
+kubectl apply -f yaml/simple-nodejs-deployment.yaml
+```
+
+* Use `dig` to wait for DNS to propagate and `curl` to test that the application is responding.

@@ -6,7 +6,7 @@ This project documents my exploration into [kubernets](https://kubernetes.io/). 
 
 These articles are listed in the order in order you should read them. Later articles uses the K8S resources created in earlier articles.
 
-* [Gentle Intro To Kubernetes](docs/gentle_introduction.md)
+* [Gentle Intro To Kubernetes](docs/gentle_introduction_to_kubernetes.md)
 * [Curated Videos From Cloud Native Computing Foundation](docs/currated_video_list.md)
 * kops
     * [Cluster](docs/create-cluster.md)
