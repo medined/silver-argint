@@ -46,7 +46,7 @@ kops update cluster --yes
 * When the nodes have been provisioned, you can see them with the following command.
 
 ```
-kubectl get nodes -l 'kops.k8s.io/instancegroup=spot
+kubectl get nodes -l 'kops.k8s.io/instancegroup=spot'
 ```
 
 ## Usage

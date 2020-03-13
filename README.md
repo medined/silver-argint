@@ -17,7 +17,9 @@ These articles are listed in the order in order you should read them. Later arti
 * [Create sandbox namespace](docs/create-sandbox-namespace.md)
 * [Run a shell inside the cluster](docs/run-shell-inside-cluster.md)
 * [Create Node application](docs/create-node-application.md)
-* [Deploy Certificate Manager](docs/deploy-cert-manager.md)
+* Certificate Manager
+    * [Deploy Certificate Manager](docs/deploy-cert-manager.md)
+    * TBD - [Add HTTPS To An Applicaton](docs/add_https_to_an_application.md)
 * [Deploy Helm](docs/deploy-helm.md) - a package manager for k8s.
 * Databases
     * [Deploy MySQL](docs/deploy-mysql.md)

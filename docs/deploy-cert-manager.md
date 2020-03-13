@@ -9,13 +9,27 @@ This document shows how to use cert-manager in a sandbox namespace.
 * https://cert-manager.io/
 * https://cert-manager.io/docs/tutorials/acme/ingress/
 
-## Prequisites
+## Scripted Process
+
+```
+./cert-manager-install.sh <namespace> <acme_registration_email>
+```
+
+The scripted process uses helm to install the cert-manager service and create two certificate issuers. It only gives you the option to add HTTPS to an application with further work.
+
+The email address needs to be valid (please change it!) and will be used during the Route53 domain registration process when certificates are issued.
+
+## Manual Process
+
+The manual process is more complex than the scripted process because it shows how to add a valid HTTPS certificate to an application.
+
+### Prequisites
 
 * [Create sandbox Namespace](create-sandbox-namespace.md)
 
 While the instructions show how to create a namespace named `sandbox`, please create uniquely-named namespace so that your work does not interfere anyone else.
 
-## Steps
+### Steps
 
 * Install certificate manager.
 

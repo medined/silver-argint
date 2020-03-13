@@ -7,7 +7,7 @@ Kubernetes uses the concept of Namespace to isolate one group of resources from 
 If no namespace name is provided, the script will default to `sandbox`.
 
 ```
-./sandbox-namespace-create.sh <namespace name>
+./namespace-create.sh <namespace name>
 ```
 
 ## Manual Process
@@ -34,18 +34,16 @@ kubectl create -f yaml/namespace-$NAMESPACE.yaml
 kubectl config set-context --current --namespace=$NAMESPACE
 ```
 
-*  NOTE: Remove ingress controller steps.
-
-* Install ingress controller. Note that `dmm` is used as a prefix.
+* Install ingress controller. Note that $NAMESPACE is used as a prefix. This prefix will be used in later steps and documents to help find the controller service. The ingress controller will be used later to provide access to specific services over the internet. Note that a classic ELB will be created using TCP (layer 4) to forward requests from ports 80 and 443 to some randomly-assigned internal port.
 
 ```
-helm install dmm stable/nginx-ingress --namespace $NAMESPACE
+helm install $NAMESPACE stable/nginx-ingress --namespace $NAMESPACE
 ```
 
 * Get the load balancer hostname assigned to your nginx-ingress-controller service.
 
 ```
-K8S_HOSTNAME=$(kubectl get service dmm-nginx-ingress-controller --namespace $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+K8S_HOSTNAME=$(kubectl get service $NAMESPACE-nginx-ingress-controller --namespace $NAMESPACE -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 echo $K8S_HOSTNAME
 ```
 
