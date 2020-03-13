@@ -1,11 +1,20 @@
 # Create sandbox Namespace
 
-## Steps
+Kubernetes uses the concept of Namespace to isolate one group of resources from another. Each developer should have their own namespace. For the sake of showing a concrete example, the steps below use `sandbox` as the namespace but it is expected that you'll use a unique name.
 
-* Create sandbox namespace.
+## Scripted Process
+
+If no namespace name is provided, the script will default to `sandbox`.
 
 ```
+./sandbox-namespace-create.sh <namespace name>
+```
 
+## Manual Process
+
+* Create `sandbox` namespace.
+
+```
 NAMESPACE=sandbox
 
 cat <<EOF > yaml/namespace-$NAMESPACE.yaml

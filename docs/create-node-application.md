@@ -108,7 +108,7 @@ docker rm simple-nodejs
 
 ### Run Web Server As Pod
 
-This section will run the nodejs server in a single pod in the cluster. It won't be scalable but it will respond to HTTP requests.
+This section will run the nodejs server in a *single* pod in the cluster. It won't be scalable but it will respond to HTTP requests.
 
 * Create a pod to run the image. Note the following:
   * The port matches the exposed port in the Dockerfile.
@@ -176,6 +176,8 @@ kubectl delete -f yaml/simple-nodejs-service.yaml
 ```
 
 ### Run Web Server As Depoyment
+
+Running an application as a deployment means it can use multiple pods, called replicas. In the example below, it requests three replicas.
 
 In the manifest below, the selector field defines how the deployment finds which pods to manage. In this case, the match matches the label also defined in the manifest.
 
