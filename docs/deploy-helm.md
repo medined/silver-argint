@@ -8,8 +8,14 @@ NOTE: With the release of Helm 3, tiller is no longer needed.
 
 * https://helm.sh/blog/helm-3-released/
 * https://helm.sh/docs/intro/install/
- 
-## Steps
+
+## Scripted Process
+
+```
+./helm-install.sh
+```
+
+## Manual Process
 
 * Install Helm
 

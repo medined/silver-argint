@@ -74,9 +74,9 @@ aws route53 change-resource-record-sets \
   --change-batch file://json/dns-action.json
 
 COUNT=$(dig $NEW_DOMAIN_NAME A +noall +answer | wc -l)
-while [ $COUNT != 6 ]
+while [ $COUNT != 5 ]
 do
-    echo "Waiting 10 seconds for DNS to propagate."
-    sleep 10
+    echo "Waiting 30 seconds for DNS to propagate which can take up to 10 minutes."
+    sleep 30
     COUNT=$(dig $NEW_DOMAIN_NAME A +noall +answer | wc -l)
 done

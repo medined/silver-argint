@@ -7,7 +7,7 @@
 
 ## Manual Steps
 
-* Update AWS configuration file, ~/.aws/credentials. Set AWS_PROFILE in ~/.bashrc
+* Update AWS configuration file, `$HOME/.aws/credentials`. Set AWS_PROFILE in `$HOME/.bashrc`.
 
 * Create an S3 bucket for random stuff.
 
@@ -28,7 +28,7 @@ dig NS va-oit.cloud
 aws s3 mb s3://va-oit-cloud--16d7b802-4de6-11ea-924b-ef8fcd6cbcb5
 ```
 
-* Export an environment variable to let `kops` know where to store its state. You could add this variable to your ~/.bashrc file if you are only working with one cluster or if you want one bucket to hold the states of multiple clusters.
+* Export an environment variable to let `kops` know where to store its state. You could add this variable to your `$HOME/.bashrc` file if you are only working with one cluster or if you want one bucket to hold the states of multiple clusters.
 
 ```
 export KOPS_STATE_STORE=s3://va-oit-cloud--16d7b802-4de6-11ea-924b-ef8fcd6cbcb5
@@ -58,7 +58,7 @@ sudo apt-get install bash-completion
 * Enable kubectl auto-completion when your bash shell starts.
 
 ```
-echo 'source <(kubectl completion bash)' >>~/.bashrc
+echo 'source <(kubectl completion bash)' >>$HOME/.bashrc
 ```
 
 * Install `kops`.
@@ -80,10 +80,10 @@ kops version
 * Create an AWS EC2 key pair. For example, it could be called va-oit-cloud. Then copy the file to S3 for safekeeping. Note that you should lock down the permissions as well. The last thing to do is generate a public key from the PEM file (the private key)
 
 ```
-chmod 600 ~/Downloads/$NAME.pem
-ssh-keygen -y -f ~/Downloads/$NAME.pem > ~/Downloads/$NAME.pub
-aws s3 cp ~/Downloads/$NAME.pem s3://$S3_RANDOM
-aws s3 cp ~/Downloads/$NAME.pub s3://$S3_RANDOM
+chmod 600 $HOME/Downloads/$NAME.pem
+ssh-keygen -y -f $HOME/Downloads/$NAME.pem > $HOME/Downloads/$NAME.pub
+aws s3 cp $HOME/Downloads/$NAME.pem s3://$S3_RANDOM
+aws s3 cp $HOME/Downloads/$NAME.pub s3://$S3_RANDOM
 ```
 
 * Create the cluster configuration.
@@ -92,7 +92,7 @@ aws s3 cp ~/Downloads/$NAME.pub s3://$S3_RANDOM
 kops create cluster \
   --cloud=aws \
   --zones=us-east-1a \
-  --ssh-public-key ~/Downloads/$NAME.pub \
+  --ssh-public-key $HOME/Downloads/$NAME.pub \
   $NAME
 ```
 
@@ -123,7 +123,7 @@ kubectl get nodes
 * You can SSH to the master node but I don't recommend this. If you are not using Debian as the base operating system, you might need to use a different user than `admin`.
 
 ```
-ssh -i ~/Downloads/$NAME.pem admin@api.$NAME
+ssh -i $HOME/Downloads/$NAME.pem admin@api.$NAME
 ```
 
 ### Visit Cluster Home Page

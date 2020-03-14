@@ -2,6 +2,32 @@
 
 This project documents my exploration into [kubernets](https://kubernetes.io/). Each goal shown below is fairly simple and intended to be short and declarative. You'll need to read the orginal source material by following the links in each article to learn context.
 
+## TL;DR
+
+```
+cat <<EOF > $HOME/va-oit.cloud.env
+ACME_REGISTRATION_EMAIL=dmedined@crimsongovernment.com
+AWS_ACCESS_KEY_ID=<access key>
+AWS_SECRET_ACCESS_KEY=<secret access key>
+AWS_REGION=us-east-1
+AWS_ZONES=us-east-1a
+DOMAIN_NAME=va-oit.cloud
+MASTER_ZONES=us-east-1a
+NODE_COUNT=2
+EOF
+
+CONFIG_FILE="$HOME/va-oit.cloud.env"
+NAMESPACE=sandbox
+source ./cluster-create.sh -f $CONFIG_FILE
+./dashboard-proxy-start.sh
+./helm-install.sh
+./namespace-create.sh $NAMESPACE
+./cert-manager-install.sh -f $CONFIG_FILE $NAMESPACE
+./public-docker-registry-install.sh -f $CONFIG_FILE $NAMESPACE
+```
+
+* [Deploy Jenkins](docs/deploy-jenkins.md)
+
 ## Notes
 
 These articles are listed in the order in order you should read them. Later articles uses the K8S resources created in earlier articles.
@@ -374,3 +400,8 @@ https://www.openfaas.com/
 
 https://knative.dev/ - 
 
+https://github.com/Shopify/krane - A command-line tool that helps you ship changes to a Kubernetes namespace and understand the result
+
+https://get-kapp.io/ -  kapp is a simple deployment tool focused on the concept of "Kubernetes application" — a set of resources with the same label.
+
+https://fluxcd.io/ -  The GitOps operator for Kubernetes

@@ -1,244 +1,245 @@
 #!/bin/bash
 
-#####
 # This script installs a public docker registry into k8s.
-# https://www.nearform.com/blog/how-to-run-a-public-docker-registry-in-kubernetes/
+#  https://www.nearform.com/blog/how-to-run-a-public-docker-registry-in-kubernetes/
+#
+# GOAL:
+#   curl -u user:pass https://registry.va-oit.cloud/v2/catalog
 
-# ## Prequisites
+if [ $# -ne 3 ]; then
+  echo "Usage: -f [configuration file] <namespace>"
+  exit
+fi
 
-# * [Deploy Certificate Manager](deploy-cert-manager.md)
-# * a sandbox namespace.
+if [ "$1" != "-f" ]; then
+    echo "ERROR: Expecting -f parameter."
+    exit
+fi
 
-# ## Goal
+unset ACME_REGISTRATION_EMAIL
+unset DOMAIN_NAME
 
-# ```
-# curl -u user:pass https://registry.va-oit.cloud/v2/catalog
-# ```
+CONFIG_FILE=$2
+NAMESPACE=$3
+source $CONFIG_FILE
 
-# ## Steps
+if [ -z $DOMAIN_NAME ]; then
+  echo "ERROR: Missing environment variable: DOMAIN_NAME"
+  return
+fi
 
-# * Create a vanity URL using the steps [here](create-vanity-url.md). Use `registry` as the service name.
+SERVICE_NAME=registry
+ISSUER_REF=letsencrypt-production-issuer
 
-# * Export some variables to parameterize later steps.
+./cert-manager-install.sh -f $CONFIG_FILE $NAMESPACE
+./create-vanity-url.sh $SERVICE_NAME $DOMAIN_NAME
 
-# ```
-# export REGISTRY_HOST=registry.$NAME
-# export ISSUER_REF=letsencrypt-production-issuer
-# ```
+REGISTRY_HOST="$SERVICE_NAME.$DOMAIN_NAME"
+echo "REGISTRY_HOST: $REGISTRY_HOST"
 
-# * Request a PKI cerificate. Notce that the namespace is specified in the manifest file.
+cat <<EOF > yaml/registry-certificate.yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: docker-registry
+  namespace: $NAMESPACE
+spec:
+  secretName: docker-registry-tls-certificate
+  issuerRef:
+    name: $ISSUER_REF
+  dnsNames:
+  - $REGISTRY_HOST
+EOF
+kubectl apply -f yaml/registry-certificate.yaml
 
-# ```
-# cat <<EOF > yaml/registry-certificate.yaml
-# apiVersion: cert-manager.io/v1alpha2
-# kind: Certificate
-# metadata:
-#   name: docker-registry
-#   namespace: sandbox
-# spec:
-#   secretName: docker-registry-tls-certificate
-#   issuerRef:
-#     name: $ISSUER_REF
-#   dnsNames:
-#   - $REGISTRY_HOST
-# EOF
-# kubectl apply -f yaml/registry-certificate.yaml
-# ```
+# The following command can be used for debugging.
+# kubectl describe certificate docker-registry --namespace=$NAMESPACE
 
-# * Switch to the sandbox namespace.
+PASSWORD_FILENAME="password-docker-registry-$NAMESPACE.txt"
+LOCAL_PASSWORD_PATH="/tmp/$PASSWORD_FILENAME"
 
-# ```
-# kubectl config set-context --current --namespace=sandbox
-# ```
+DOMAIN_NAME_SAFE=$(echo $DOMAIN_NAME | tr [:upper:] [:lower:] | tr '.' '-')
+DOMAIN_NAME_S3="s3://$DOMAIN_NAME_SAFE-$(echo -n $DOMAIN_NAME | sha256sum | cut -b-10)"
+S3_PASSWORD_KEY="$DOMAIN_NAME_S3/$PASSWORD_FILENAME"
 
-# * Check the certificate status.
+if [ ! -f $LOCAL_PASSWORD_PATH ]; then
+    # Store the password for future use.
+    PASSWORD=$(uuid)
+    echo $PASSWORD > $LOCAL_PASSWORD_PATH
+    chmod 600 $LOCAL_PASSWORD_PATH
+else
+    PASSWORD=$(cat $LOCAL_PASSWORD_PATH)
+fi
 
-# ```
-# kubectl describe certificate docker-registry
-# ```
+aws s3 cp $LOCAL_PASSWORD_PATH $S3_PASSWORD_KEY
 
-# * Create a secret password for the `admin` user. The image is pulled before use so that we can capture stdout cleanly.
+docker pull registry:2
+HTPASSWORD=$(docker run --entrypoint htpasswd --rm registry:2 -Bbn admin $PASSWORD | base64 --wrap 92)
+echo "ADMIN Password: $PASSWORD"
+echo "HTPASSWORD: $HTPASSWORD"
 
-# ```
-# PASSWORD=$(uuid)
+# Store the admin password into k8s.
 
-# # Store the password for future use. This file is ignored by git.
-# echo $PASSWORD > password-docker-registry.txt
-# chmod 600 password-docker-registry.txt
+cat <<EOF > yaml/registry-admin-password-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: docker-registry
+  namespace: $NAMESPACE
+type: Opaque
+data:
+  HTPASSWD: $HTPASSWORD
+EOF
+kubectl apply -f yaml/registry-admin-password-secret.yaml
 
-# docker pull registry:2
-# HTPASSWORD=$(docker run --entrypoint htpasswd --rm registry:2 -Bbn admin $PASSWORD | base64 --wrap 92)
-# echo "ADMIN Password: $PASSWORD"
-# echo "HTPASSWORD: $HTPASSWORD"
+# Create a configuration map where the authentication method is defined to be Basic Auth.
 
-# cat <<EOF > yaml/registry-admin-password-secret.yaml
-# apiVersion: v1
-# kind: Secret
-# metadata:
-#   name: docker-registry
-#   namespace: sandbox
-# type: Opaque
-# data:
-#   HTPASSWD: $HTPASSWORD
-# EOF
-# kubectl apply -f yaml/registry-admin-password-secret.yaml
-# ```
+cat <<EOF > yaml/registry-config-map.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docker-registry
+  namespace: $NAMESPACE
+data:
+  registry-config.yml: |
+    version: 0.1
+    log:
+      fields:
+        service: registry
+    storage:
+      cache:
+        blobdescriptor: inmemory
+      filesystem:
+        rootdirectory: /var/lib/registry
+    http:
+      addr: :5000
+      headers:
+        X-Content-Type-Options: [nosniff]
+    auth:
+      htpasswd:
+        realm: basic-realm
+        path: /auth/htpasswd
+    health:
+      storagedriver:
+        enabled: true
+        interval: 10s
+        threshold: 3
+EOF
+kubectl apply -f yaml/registry-config-map.yaml
 
-# * Create a configuration map where the authentication method is defined to be Basic Auth.
+# Define pod.
 
-# ```
-# cat <<EOF > yaml/registry-config-map.yaml
-# apiVersion: v1
-# kind: ConfigMap
-# metadata:
-#   name: docker-registry
-#   namespace: sandbox
-# data:
-#   registry-config.yml: |
-#     version: 0.1
-#     log:
-#       fields:
-#         service: registry
-#     storage:
-#       cache:
-#         blobdescriptor: inmemory
-#       filesystem:
-#         rootdirectory: /var/lib/registry
-#     http:
-#       addr: :5000
-#       headers:
-#         X-Content-Type-Options: [nosniff]
-#     auth:
-#       htpasswd:
-#         realm: basic-realm
-#         path: /auth/htpasswd
-#     health:
-#       storagedriver:
-#         enabled: true
-#         interval: 10s
-#         threshold: 3
-# EOF
-# kubectl apply -f yaml/registry-config-map.yaml
-# ```
+cat <<EOF > yaml/registry-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: docker-registry
+  namespace: $NAMESPACE
+  labels:
+    name: docker-registry
+spec:
+  volumes:
+    - name: config
+      configMap:
+        name: docker-registry
+        items:
+          - key: registry-config.yml
+            path: config.yml
+    - name: htpasswd
+      secret:
+        secretName: docker-registry
+        items:
+        - key: HTPASSWD
+          path: htpasswd
+    - name: storage
+      emptyDir: {}
+  containers:
+    - name: docker-registry
+      image: registry:2.6.2
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: http
+          containerPort: 5000
+          protocol: TCP
+      volumeMounts:
+        - name: config
+          mountPath: /etc/docker/registry
+          readOnly: true
+        - name: htpasswd
+          mountPath: /auth
+          readOnly: true
+        - name: storage
+          mountPath: /var/lib/registry
+EOF
+kubectl apply -f yaml/registry-pod.yaml
 
-# * Define a pod.
+# Create a service.
 
-# ```
-# cat <<EOF > yaml/registry-pod.yaml
-# apiVersion: v1
-# kind: Pod
-# metadata:
-#   name: docker-registry
-#   namespace: sandbox
-#   labels:
-#     name: docker-registry
-# spec:
-#   volumes:
-#     - name: config
-#       configMap:
-#         name: docker-registry
-#         items:
-#           - key: registry-config.yml
-#             path: config.yml
-#     - name: htpasswd
-#       secret:
-#         secretName: docker-registry
-#         items:
-#         - key: HTPASSWD
-#           path: htpasswd
-#     - name: storage
-#       emptyDir: {}
-#   containers:
-#     - name: docker-registry
-#       image: registry:2.6.2
-#       imagePullPolicy: IfNotPresent
-#       ports:
-#         - name: http
-#           containerPort: 5000
-#           protocol: TCP
-#       volumeMounts:
-#         - name: config
-#           mountPath: /etc/docker/registry
-#           readOnly: true
-#         - name: htpasswd
-#           mountPath: /auth
-#           readOnly: true
-#         - name: storage
-#           mountPath: /var/lib/registry
-# EOF
-# kubectl apply -f yaml/registry-pod.yaml
-# ```
+cat <<EOF > yaml/registry-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-registry
+  namespace: $NAMESPACE
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5000
+      targetPort: 5000
+  selector:
+    name: docker-registry
+EOF
+kubectl apply -f yaml/registry-service.yaml
 
-# * Create a service.
+# Create an ingress.
 
-# ```
-# cat <<EOF > yaml/registry-service.yaml
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: docker-registry
-# spec:
-#   type: ClusterIP
-#   ports:
-#     - name: http
-#       protocol: TCP
-#       port: 5000
-#       targetPort: 5000
-#   selector:
-#     name: docker-registry
-# EOF
-# kubectl apply -f yaml/registry-service.yaml
-# ```
+cat <<EOF > yaml/registry-ingress.yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: docker-registry
+  namespace: $NAMESPACE
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    certmanager.k8s.io/issuer: $ISSUER_REF
+spec:
+  tls:
+  - hosts:
+    - $REGISTRY_HOST
+    secretName: docker-registry-tls-certificate
+  rules:
+  - host: $REGISTRY_HOST
+    http:
+      paths:
+      - backend:
+          serviceName: docker-registry
+          servicePort: 5000
+EOF
+kubectl apply -f yaml/registry-ingress.yaml
 
-# * Create an ingress.
+echo "Waiting 30 seconds for SSL certificate"
+sleep 30
 
-# ```
-# cat <<EOF > yaml/registry-ingress.yaml
-# apiVersion: extensions/v1beta1
-# kind: Ingress
-# metadata:
-#   name: docker-registry
-#   annotations:
-#     kubernetes.io/ingress.class: nginx
-#     nginx.ingress.kubernetes.io/proxy-body-size: "0"
-#     certmanager.k8s.io/issuer: $ISSUER_REF
-# spec:
-#   tls:
-#   - hosts:
-#     - $REGISTRY_HOST
-#     secretName: docker-registry-tls-certificate
-#   rules:
-#   - host: $REGISTRY_HOST
-#     http:
-#       paths:
-#       - backend:
-#           serviceName: docker-registry
-#           servicePort: 5000
-# EOF
-# kubectl apply -f yaml/registry-ingress.yaml
-# ```
+# Test the registry.
 
-# * Test the registry.
+echo "----------------"
+echo "Registry Catalog"
+curl -u admin:$PASSWORD https://$REGISTRY_HOST/v2/_catalog
 
-# ```
-# curl -u admin:$PASSWORD https://$REGISTRY_HOST/v2/_catalog
-# {"repositories":[]}
-# ```
+echo "----------------"
+echo "Push an image to the registry"
 
-# * Push an image to the registry.
+docker login https://$REGISTRY_HOST -u admin -p $PASSWORD
+docker pull busybox:latest
+docker tag busybox:latest $REGISTRY_HOST/busybox:latest
+docker push $REGISTRY_HOST/busybox:latest
 
-# ```
-# docker login https://$REGISTRY_HOST -u admin -p $PASSWORD
-# docker pull busybox:latest
-# docker tag busybox:latest $REGISTRY_HOST/busybox:latest
-# docker push $REGISTRY_HOST/busybox:latest
-# ```
+echo "----------------"
+echo "Registry Catalog. Should be an image now."
+curl -u admin:$PASSWORD https://$REGISTRY_HOST/v2/_catalog
 
-# * View the registry catalog again.
-
-# ```
-# curl -u admin:$PASSWORD https://$REGISTRY_HOST/v2/_catalog
-# {"repositories":["busybox"]}
-# ```
-
-# * The script `docker-registry-login.sh` can be used to automatically log into the registry.
+echo "----------------"
+echo "Use ./docker-registry-login.sh to log into the registry."

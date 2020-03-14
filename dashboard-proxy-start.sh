@@ -12,6 +12,9 @@
 # apply over and over without ill effect.
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-rc5/aio/deploy/recommended.yaml
 
+echo "Waiting 5 seconds for processes to start."
+sleep 5
+
 # Create the admin-user service account.
 
 kubectl apply -f - <<EOF

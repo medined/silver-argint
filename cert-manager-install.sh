@@ -5,11 +5,34 @@
 # 'certificates as a service' to developers working within your k8s cluster.
 #
 
-NAMESPACE=${1:-sandbox}
-ACME_REGISTRATION_EMAIL=${2:-'dmedined@crimsongovernment.com'}
+if [ $# -ne 3 ]; then
+  echo "Usage: -f [configuration file] <namespace>"
+  exit
+fi
+
+if [ "$1" != "-f" ]; then
+    echo "ERROR: Expecting -f parameter."
+    exit
+fi
+
+unset ACME_REGISTRATION_EMAIL
+
+CONFIG_FILE=$2
+NAMESPACE=$3
+source $CONFIG_FILE
+
 SERVICE="cert-manager"
 
-./namespace-create.sh
+if [ -z $ACME_REGISTRATION_EMAIL ]; then
+  echo "ERROR: Missing environment variable: ACME_REGISTRATION_EMAIL"
+  exit
+fi
+if [ -z $NAMESPACE ]; then
+  echo "ERROR: Missing parameter: <namespace>"
+  exit
+fi
+
+./namespace-create.sh $NAMESPACE $ACME_REGISTRATION_EMAIL
 
 # Add the helm repository.
 helm repo add jetstack https://charts.jetstack.io
@@ -63,4 +86,4 @@ spec:
         ingress:
           class: nginx
 EOF
-kubectl create -f yaml/certificate-issuer.yaml
+kubectl apply -f yaml/certificate-issuer.yaml

@@ -10,8 +10,8 @@ if [ "$1" != "-f" ]; then
     exit
 fi
 
-ENV_FILE=$2
-source $ENV_FILE
+CONFIG_FILE=$2
+source $CONFIG_FILE
 
 if [ -z $DOMAIN_NAME ]; then
   echo "ERROR: Missing environment variable: DOMAIN_NAME"

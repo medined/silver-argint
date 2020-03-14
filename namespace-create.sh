@@ -32,8 +32,8 @@ K8S_HOSTNAME=$(kubectl get service $INGRESS_NAME-nginx-ingress-controller -o jso
 COUNT=$(dig $K8S_HOSTNAME A +noall +answer | wc -l)
 while [ $COUNT != 5 ]
 do
-    echo "Waiting 10 seconds for DNS to propagate."
-    sleep 10
+    echo "Waiting 30 seconds for DNS to propagate which can take up to 10 minutes."
+    sleep 30
     COUNT=$(dig $K8S_HOSTNAME A +noall +answer | wc -l)
 done
 

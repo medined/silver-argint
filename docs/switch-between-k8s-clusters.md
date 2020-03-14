@@ -41,6 +41,6 @@ kops validate cluster
 If you have created an `env` file for your cluster, then you can use a script to switch between clusters.
 
 ```
-source source-me.cluster-connect.sh -f ~/va-oit.cloud.env
-source source-me.cluster-connect.sh -f ~/va-oit-blue.cloud.env
+source source-me.cluster-connect.sh -f $HOME/va-oit.cloud.env
+source source-me.cluster-connect.sh -f $HOME/va-oit-blue.cloud.env
 ```
