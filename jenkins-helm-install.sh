@@ -33,18 +33,6 @@ fi
 SERVICE_NAME="jenkins"
 NEW_DOMAIN_NAME="$SERVICE_NAME.$DOMAIN_NAME"
 
-kubectl get pods \
-  --namespace $NAMESPACE \
-  --output jsonpath="{.items[0].metadata.name}" \
-  --selector "app.kubernetes.io/instance=$SERVICE_NAME" > /dev/null 2>&1
-
-if [ $? == 0 ]; then
-  echo "###############################"
-  echo "# Jenkins is already running. #"
-  echo "###############################"
-  exit
-fi
-
 # The jenkins password is stored in a secret. If you want to
 # specify the password to use, pre-create the secret.
 
@@ -87,7 +75,7 @@ master:
     - kubernetes-cli
     - workflow-aggregator
     - workflow-job
-  serviceType: LoadBalancer
+  serviceType: ClusterIP
   servicePort: 80
 agent:
   enabled: true
@@ -99,49 +87,34 @@ agent:
     mountPath: /usr/local/sbin
 EOF
 
-helm install $SERVICE_NAME stable/jenkins \
-  -f yaml/values.jenkins.yaml \
-  --namespace $NAMESPACE
+helm list --namespace $NAMESPACE | grep $SERVICE_NAME > /dev/null
+if [ $? != 0 ]; then
+    helm install $SERVICE_NAME stable/jenkins -f yaml/values.jenkins.yaml --namespace $NAMESPACE
+    echo "Helm chart installed: $SERVICE_NAME"
+else
+    echo "Helm chart exists: $SERVICE_NAME"
+fi
 
 # Remove the file so the password is not stored locally.
 rm -f yaml/values.jenkins.yaml
 
-echo "Waiting for 45 seconds to get LoadBalancer host name."
-sleep 45
+SA_NAME="jenkins-deployer"
+CRB_NAME="jenkins-deployer-role"
 
-K8S_HOSTNAME=$(kubectl get svc --namespace $NAMESPACE $SERVICE_NAME --template "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}")
+kubectl get serviceaccount $SA_NAME --namespace $NAMESPACE 1>/dev/null 2>&1
+if [ $? != 0 ]; then
+  kubectl create serviceaccount $SA_NAME --namespace $NAMESPACE
+  echo "Service account created: $SA_NAME"
+else
+  echo "Service account exists: $SA_NAME"
+fi
 
-cat <<EOF > json/dns-action.json
-{
-  "Changes": [
-    {
-      "Action": "UPSERT",
-      "ResourceRecordSet": {
-        "Name": "$NEW_DOMAIN_NAME",
-        "Type": "CNAME",
-        "TTL": 300,
-        "ResourceRecords": [
-          {
-            "Value": "$K8S_HOSTNAME"
-          }
-        ]
-      }
-    }
-  ]
-}
-EOF
+kubectl get clusterrolebinding $CRB_NAME 1>/dev/null 2>&1
+if [ $? != 0 ]; then
+  kubectl create clusterrolebinding $CRB_NAME --clusterrole=cluster-admin --serviceaccount=sandbox:jenkins-deployer
+  echo "Cluster Role Binding created: $CRB_NAME"
+else
+  echo "Cluster Role Binding exists: $CRB_NAME"
+fi
 
-export HOSTED_ZONE_ID=$( \
-  aws route53 list-hosted-zones-by-name \
-    --query "HostedZones[?Name==\`$DOMAIN_NAME.\`].Id" \
-    --output text \
-)
-
-aws route53 change-resource-record-sets \
-  --hosted-zone-id $HOSTED_ZONE_ID \
-  --change-batch file://json/dns-action.json
-
-echo "--------------"
-echo
-echo "Jenkins uses it own load-balancer (external endpoint)"
-echo "Use ./jenkins-helm-check.sh to find what it is."
+./jenkins-proxy-start.sh

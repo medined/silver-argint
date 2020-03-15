@@ -4,41 +4,45 @@ Anything that works with a Kuberneters cluster has to authenticate and have the 
 
 ## Create the Credential (i.e. the token)
 
+If you installed Jenkins using the `jenkins-helm-install.sh` then the service account and cluster role binding have already been created.
+
 * Create a service account and get the token associated with it.
 
 ```
-kubectl create serviceaccount jenkins-deployer --namespace sandbox
+NAMESPACE=sandbox
+
+kubectl create serviceaccount jenkins-deployer --namespace $NAMESPACE
 
 kubectl create clusterrolebinding jenkins-deployer-role \
   --clusterrole=cluster-admin \
   --serviceaccount=sandbox:jenkins-deployer
 
-TOKEN_NAME=$(kubectl get serviceaccount jenkins-deployer --namespace sandbox -o go-template --template='{{range .secrets}}{{.name}}{{"\n"}}{{end}}')
+TOKEN_NAME=$(kubectl get serviceaccount jenkins-deployer --namespace $NAMESPACE -o go-template --template='{{range .secrets}}{{.name}}{{"\n"}}{{end}}')
 
-TOKEN=$(kubectl get secrets $TOKEN_NAME --namespace sandbox -o go-template --template '{{index .data "token"}}' | base64 -d)
+TOKEN=$(kubectl get secrets $TOKEN_NAME --namespace $NAMESPACE -o go-template --template '{{index .data "token"}}' | base64 -d)
 echo "TOKEN: $TOKEN"
 ```
 
 * Here is another way to find the token.
 
 ```
-SECRET_NAME=$(kubectl get secrets --namespace sandbox | grep jenkins-deployer-token | awk '{print $1}')
-TOKEN=$(kubectl describe secret $SECRET_NAME --namespace sandbox | grep ^token | awk '{print $2}')
+SECRET_NAME=$(kubectl get secrets --namespace $NAMESPACE | grep jenkins-deployer-token | awk '{print $1}')
+TOKEN=$(kubectl describe secret $SECRET_NAME --namespace $NAMESPACE | grep ^token | awk '{print $2}')
 echo "TOKEN: $TOKEN"
 ```
 
 ## Add Credential to Jenkins
 
-* Find the Jenkins URL.
+* Use the following script to start a local proxy for the Jenkins service.
 
 ```
-JENKINS_URL=$(kubectl get services --selector='app.kubernetes.io/instance=jenkins' | grep "LoadBalancer" | awk '{print $4}')
- ```
+./jenkins-proxy-start.sh $NAMESPACE
+```
 
 * Visit Jenkins. Login as the `admin` user. If you don't know the password, check `yaml/values.jenkins.yaml`.
 
 ```
-firefox $JENKINS_URL
+firefox http://localhost:8080
 ```
 
 * In Jenkins, create a credential which can be used to connect to a kubernetes cluster. The ID below is the credentialSId needed in the pipeline.

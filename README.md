@@ -18,13 +18,16 @@ EOF
 
 CONFIG_FILE="$HOME/va-oit.cloud.env"
 NAMESPACE=sandbox
+JENKINS_ADMIN_PASSWORD=<password>
 source ./cluster-create.sh -f $CONFIG_FILE
 ./dashboard-proxy-start.sh
 ./helm-install.sh
 ./namespace-create.sh $NAMESPACE
 ./cert-manager-install.sh -f $CONFIG_FILE $NAMESPACE
 ./public-docker-registry-install.sh -f $CONFIG_FILE $NAMESPACE
+./jenkins-helm-set-admin-password-secret.sh $NAMESPACE $JENKINS_ADMIN_PASSWORD
 ./jenkins-helm-install.sh -f $CONFIG_FILE $NAMESPACE
+./jenkins-proxy-start.sh $NAMESPACE
 ```
 
 * [Deploy Jenkins](docs/deploy-jenkins.md)

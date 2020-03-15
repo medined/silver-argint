@@ -1,7 +1,7 @@
 #!/bin/bash
 
-NAMESPACE=sandbox
-NAME=jenkins
+NAMESPACE=${1:-sandbox}
+SERVICE_NAME=jenkins
 
 kubectl get pods \
   --selector "app.kubernetes.io/instance=jenkins" \
@@ -17,12 +17,12 @@ mkdir -p log
 
 PASSWORD=$(kubectl get secret \
   --namespace $NAMESPACE \
-  $NAME \
+  $SERVICE_NAME \
   -o jsonpath="{.data.jenkins-admin-password}" | base64 --decode)
 
 POD=$(kubectl get pods \
   --namespace $NAMESPACE \
-  -l "app.kubernetes.io/instance=$NAME" \
+  -l "app.kubernetes.io/instance=$SERVICE_NAME" \
   -o jsonpath="{.items[0].metadata.name}")
 
 ps f | grep $POD | grep -v grep > /dev/null
