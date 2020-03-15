@@ -24,6 +24,7 @@ source ./cluster-create.sh -f $CONFIG_FILE
 ./namespace-create.sh $NAMESPACE
 ./cert-manager-install.sh -f $CONFIG_FILE $NAMESPACE
 ./public-docker-registry-install.sh -f $CONFIG_FILE $NAMESPACE
+./jenkins-helm-install.sh -f $CONFIG_FILE $NAMESPACE
 ```
 
 * [Deploy Jenkins](docs/deploy-jenkins.md)

@@ -89,8 +89,7 @@ if [ $? == 0 ]; then
     PASSWORD=$(kubectl get secret --namespace $NAMESPACE docker-registry-admin-password -o jsonpath="{.data.password}" | base64 --decode)
 else
     PASSWORD=$(uuid)
-
-    # Note that yaml files are written so that the password is never stored locally.
+    # Note that yaml files are not written so that the password is never stored locally.
 
     kubectl apply -f - <<EOF
 apiVersion: v1

@@ -21,8 +21,17 @@ if [ -z $DOMAIN_NAME ]; then
   return
 fi
 
-SERVICE_NAME=jenkins
-NEW_DOMAIN_NAME="$SERVCE_NAME.$DOMAIN_NAME"
+kubectl get namespace $NAMESPACE 1>/dev/null 2>&1
+if [ $? != 0 ]; then
+    echo "ERROR: Missing namespace: $NAMESPACE"
+    echo "  Please run ./namespace-create.sh"
+    exit
+else
+    echo "Namespace exists: $NAMESPACE"
+fi
+
+SERVICE_NAME="jenkins"
+NEW_DOMAIN_NAME="$SERVICE_NAME.$DOMAIN_NAME"
 
 kubectl get pods \
   --namespace $NAMESPACE \
@@ -36,32 +45,26 @@ if [ $? == 0 ]; then
   exit
 fi
 
-PASSWORD_FILENAME="password-jenkins-$NAMESPACE.txt"
-LOCAL_PASSWORD_PATH="/tmp/$PASSWORD_FILENAME"
+# The jenkins password is stored in a secret. If you want to
+# specify the password to use, pre-create the secret.
 
-DOMAIN_NAME_SAFE=$(echo $DOMAIN_NAME | tr [:upper:] [:lower:] | tr '.' '-')
-DOMAIN_NAME_S3="s3://$DOMAIN_NAME_SAFE-$(echo -n $DOMAIN_NAME | sha256sum | cut -b-10)"
-S3_PASSWORD_KEY="$DOMAIN_NAME_S3/$PASSWORD_FILENAME"
-
-echo
-echo "Please add a password to $LOCAL_PASSWORD_PATH. It will be the"
-echo "'admin' password for Jenkins. If needed, press ^C to create that"
-echo "that file and then rerun this script."
-echo
-echo "You'll want to create and protect this password to make it"
-echo "easier to use Jenkins easily and securely."
-echo
-read -p "Press <ENTER> to continue."
-
-if [ ! -f $LOCAL_PASSWORD_PATH ]; then
-  echo "ERROR: Missing password file: $LOCAL_PASSWORD_PATH"
-  exit
+kubectl get secret jenkins-admin-password 1>/dev/null 2>&1
+if [ $? == 0 ]; then
+    echo "Jenkins password secret exists."
+    PASSWORD=$(kubectl get secret --namespace $NAMESPACE jenkins-admin-password -o jsonpath="{.data.password}" | base64 --decode)
+else
+    PASSWORD=$(uuid)
+    kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+    name: jenkins-admin-password
+    namespace: $NAMESPACE
+data:
+    password: $(echo $PASSWORD | base64)
+EOF
 fi
-
-chmod 600 $LOCAL_PASSWORD_PATH
-PASSWORD=$(cat $LOCAL_PASSWORD_PATH)
-
-aws s3 cp $LOCAL_PASSWORD_PATH $S3_PASSWORD_KEY
 
 # Be careful which plugins are installed using this method. As I tried
 # different plugins, I ran into a log of initialization errors. I did 
@@ -96,14 +99,17 @@ agent:
     mountPath: /usr/local/sbin
 EOF
 
-helm install jenkins stable/jenkins \
+helm install $SERVICE_NAME stable/jenkins \
   -f yaml/values.jenkins.yaml \
   --namespace $NAMESPACE
 
-echo "Waiting for 30 seconds to get LoadBalancer host name."
-sleep 30
+# Remove the file so the password is not stored locally.
+rm -f yaml/values.jenkins.yaml
 
-K8S_HOSTNAME=$(kubectl get svc --namespace $NAMESPACE jenkins --template "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}")
+echo "Waiting for 45 seconds to get LoadBalancer host name."
+sleep 45
+
+K8S_HOSTNAME=$(kubectl get svc --namespace $NAMESPACE $SERVICE_NAME --template "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}")
 
 cat <<EOF > json/dns-action.json
 {
@@ -135,5 +141,7 @@ aws route53 change-resource-record-sets \
   --hosted-zone-id $HOSTED_ZONE_ID \
   --change-batch file://json/dns-action.json
 
-#
-# NOTE: How to wait for DNS to propagate. dig is not working reliably.
+echo "--------------"
+echo
+echo "Jenkins uses it own load-balancer (external endpoint)"
+echo "Use ./jenkins-helm-check.sh to find what it is."
