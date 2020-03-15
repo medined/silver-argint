@@ -1,5 +1,0 @@
-
-; <<>> DiG 9.11.5-P4-5.1ubuntu2.1-Ubuntu <<>> a120c7763eae4401cbc9c620ec12d83f-1630159708.us-east-1.elb.amazonaws.com A +noall +answer
-;; global options: +cmd
-a120c7763eae4401cbc9c620ec12d83f-1630159708.us-east-1.elb.amazonaws.com. 60 IN A 100.25.234.202
-a120c7763eae4401cbc9c620ec12d83f-1630159708.us-east-1.elb.amazonaws.com. 60 IN A 18.204.29.49

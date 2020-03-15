@@ -31,11 +31,32 @@ fi
 SERVICE_NAME=registry
 ISSUER_REF=letsencrypt-production-issuer
 
-./cert-manager-install.sh -f $CONFIG_FILE $NAMESPACE
-./create-vanity-url.sh $SERVICE_NAME $DOMAIN_NAME
+kubectl get namespace $NAMESPACE 1>/dev/null 2>&1
+if [ $? != 0 ]; then
+    echo "ERROR: Missing namespace: $NAMESPACE"
+    echo "  Please run ./namespace-create.sh"
+    exit
+else
+    echo "Namespace exists: $NAMESPACE"
+fi
+
+ISSUER="letsencrypt-production-issuer"
+
+kubectl get issuer $ISSUER 1>/dev/null 2>&1
+if [ $? != 0 ]; then
+    echo "ERROR: Missing issuer: $ISSUER"
+    echo "  Please run ./cert-manager-install.sh"
+    exit
+else
+    echo "Issuer exists: $ISSUER"
+fi
 
 REGISTRY_HOST="$SERVICE_NAME.$DOMAIN_NAME"
-echo "REGISTRY_HOST: $REGISTRY_HOST"
+
+echo "Does vanity domain, $REGISTRY_HOST, exist?"
+echo "  If not, please run ./create-vanity-url.sh"
+echo
+read -p "Press ^C to exit script. Press <ENTER> to continue."
 
 cat <<EOF > yaml/registry-certificate.yaml
 apiVersion: cert-manager.io/v1alpha2
@@ -55,42 +76,52 @@ kubectl apply -f yaml/registry-certificate.yaml
 # The following command can be used for debugging.
 # kubectl describe certificate docker-registry --namespace=$NAMESPACE
 
-PASSWORD_FILENAME="password-docker-registry-$NAMESPACE.txt"
-LOCAL_PASSWORD_PATH="/tmp/$PASSWORD_FILENAME"
+# This script uses two secrets. One to hold the password for people to login 
+# with. And the other for the container to hold to authenticate with.
 
-DOMAIN_NAME_SAFE=$(echo $DOMAIN_NAME | tr [:upper:] [:lower:] | tr '.' '-')
-DOMAIN_NAME_S3="s3://$DOMAIN_NAME_SAFE-$(echo -n $DOMAIN_NAME | sha256sum | cut -b-10)"
-S3_PASSWORD_KEY="$DOMAIN_NAME_S3/$PASSWORD_FILENAME"
+# This password is used two ways. One is passed into the container encrypted
+# using HTPASSWD which can't be recovered as clear text. The other is intended
+# to be used by a docker login script.
 
-if [ ! -f $LOCAL_PASSWORD_PATH ]; then
-    # Store the password for future use.
-    PASSWORD=$(uuid)
-    echo $PASSWORD > $LOCAL_PASSWORD_PATH
-    chmod 600 $LOCAL_PASSWORD_PATH
+kubectl get secret docker-registry-admin-password 1>/dev/null 2>&1
+if [ $? == 0 ]; then
+    echo "Registry password secret exists."
+    PASSWORD=$(kubectl get secret --namespace $NAMESPACE docker-registry-admin-password -o jsonpath="{.data.password}" | base64 --decode)
 else
-    PASSWORD=$(cat $LOCAL_PASSWORD_PATH)
-fi
+    PASSWORD=$(uuid)
 
-aws s3 cp $LOCAL_PASSWORD_PATH $S3_PASSWORD_KEY
+    # Note that yaml files are written so that the password is never stored locally.
 
-docker pull registry:2
-HTPASSWORD=$(docker run --entrypoint htpasswd --rm registry:2 -Bbn admin $PASSWORD | base64 --wrap 92)
-echo "ADMIN Password: $PASSWORD"
-echo "HTPASSWORD: $HTPASSWORD"
-
-# Store the admin password into k8s.
-
-cat <<EOF > yaml/registry-admin-password-secret.yaml
+    kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Secret
-metadata:
-  name: docker-registry
-  namespace: $NAMESPACE
 type: Opaque
+metadata:
+    name: docker-registry-admin-password
+    namespace: $NAMESPACE
 data:
-  HTPASSWD: $HTPASSWORD
+    password: $(echo $PASSWORD | base64)
 EOF
-kubectl apply -f yaml/registry-admin-password-secret.yaml
+fi
+
+kubectl get secret docker-registry-htpasswd 1>/dev/null 2>&1
+if [ $? == 0 ]; then
+    echo "Registry htpasswd secret exists."
+else
+    docker pull registry:2
+    HTPASSWORD=$(docker run --entrypoint htpasswd --rm registry:2 -Bbn admin $PASSWORD | base64 --wrap 92)
+
+    kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+    name: docker-registry-htpasswd
+    namespace: $NAMESPACE
+data:
+    HTPASSWD: $HTPASSWORD
+EOF
+fi
 
 # Create a configuration map where the authentication method is defined to be Basic Auth.
 
@@ -147,7 +178,7 @@ spec:
             path: config.yml
     - name: htpasswd
       secret:
-        secretName: docker-registry
+        secretName: docker-registry-htpasswd
         items:
         - key: HTPASSWD
           path: htpasswd
@@ -220,26 +251,6 @@ spec:
 EOF
 kubectl apply -f yaml/registry-ingress.yaml
 
-echo "Waiting 30 seconds for SSL certificate"
-sleep 30
-
-# Test the registry.
-
 echo "----------------"
-echo "Registry Catalog"
-curl -u admin:$PASSWORD https://$REGISTRY_HOST/v2/_catalog
-
-echo "----------------"
-echo "Push an image to the registry"
-
-docker login https://$REGISTRY_HOST -u admin -p $PASSWORD
-docker pull busybox:latest
-docker tag busybox:latest $REGISTRY_HOST/busybox:latest
-docker push $REGISTRY_HOST/busybox:latest
-
-echo "----------------"
-echo "Registry Catalog. Should be an image now."
-curl -u admin:$PASSWORD https://$REGISTRY_HOST/v2/_catalog
-
-echo "----------------"
-echo "Use ./docker-registry-login.sh to log into the registry."
+echo "The docker registry will soon be ready to accept requests. Please wait a few minutes."
+echo 

@@ -12,11 +12,16 @@ DOMAIN_NAME=$2
 
 NEW_DOMAIN_NAME="$SERVICE_NAME.$DOMAIN_NAME"
 
-COUNT=$(dig $NEW_DOMAIN_NAME A +noall +answer | wc -l)
-if [ $COUNT == 6 ]; then
-  echo "Domain already exists: $NEW_DOMAIN_NAME"
-  exit
-fi
+#
+# NOTE: How to wait for DNS to propagate. dig is not working reliably.
+
+echo "Please run the following command to see if '$NEW_DOMAIN_NAME' already exists."
+echo
+echo "dig $NEW_DOMAIN_NAME"
+echo
+echo "If it does not exist, press <ENTER>. Otherwise, press ^C to end this script."
+echo
+read -p "Press <ENTER> to continue."
 
 export HOSTED_ZONE_ID=$( \
   aws route53 list-hosted-zones-by-name \
@@ -39,15 +44,14 @@ fi
 K8S_HOSTNAME=$(kubectl get service $SAFE_DOMAIN_NAME-nginx-ingress-controller -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 echo "K8S_HOSTNAME: $K8S_HOSTNAME"
 
-# Wait until the DNS has propagated for the load balancer hostname.
+#
+# NOTE: How to wait for DNS to propagate. dig is not working reliably.
 
-dig $K8S_HOSTNAME  | grep "ANSWER SECTION" -A 2 -m 1 | grep $K8S_HOSTNAME > /dev/null
-while [ $? != 0 ]
-do
-    echo "Waiting 10 seconds for DNS to propagate."
-    sleep 10
-    dig $K8S_HOSTNAME  | grep "ANSWER SECTION" -A 2 -m 1 | grep $K8S_HOSTNAME > /dev/null
-done
+echo "Please run the following command repeatly until the DNS entry has been propagated."
+echo
+echo "dig $K8S_HOSTNAME"
+echo
+read -p "Press <ENTER> to continue."
 
 cat <<EOF > json/dns-action.json
 {
@@ -73,10 +77,12 @@ aws route53 change-resource-record-sets \
   --hosted-zone-id $HOSTED_ZONE_ID \
   --change-batch file://json/dns-action.json
 
-COUNT=$(dig $NEW_DOMAIN_NAME A +noall +answer | wc -l)
-while [ $COUNT != 5 ]
-do
-    echo "Waiting 30 seconds for DNS to propagate which can take up to 10 minutes."
-    sleep 30
-    COUNT=$(dig $NEW_DOMAIN_NAME A +noall +answer | wc -l)
-done
+#
+# NOTE: How to wait for DNS to propagate. dig is not working reliably.
+
+echo "Your new vanity URL will be ready in a few minutes. When it is ready, please"
+echo "press <ENTER>."
+echo
+echo "dig $NEW_DOMAIN_NAME"
+echo
+read -p "Press <ENTER> to continue."

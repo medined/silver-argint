@@ -27,14 +27,14 @@ fi
 
 K8S_HOSTNAME=$(kubectl get service $INGRESS_NAME-nginx-ingress-controller -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
-# Wait until the DNS has propagated for the load balancer hostname.
+#
+# NOTE: How to wait for DNS to propagate. dig is not working reliably.
 
-COUNT=$(dig $K8S_HOSTNAME A +noall +answer | wc -l)
-while [ $COUNT != 5 ]
-do
-    echo "Waiting 30 seconds for DNS to propagate which can take up to 10 minutes."
-    sleep 30
-    COUNT=$(dig $K8S_HOSTNAME A +noall +answer | wc -l)
-done
+echo "$K8S_HOSTNAME will be ready in a few minutes. When it is ready, please"
+echo "press <ENTER>."
+echo
+echo "dig $K8S_HOSTNAME"
+echo
+read -p "Press <ENTER> to continue."
 
 echo "Load Balancer is ready for traffic: $K8S_HOSTNAME"
