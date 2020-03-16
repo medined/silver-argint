@@ -22,6 +22,7 @@ JENKINS_ADMIN_PASSWORD=<password>
 source ./cluster-create.sh -f $CONFIG_FILE
 ./dashboard-proxy-start.sh
 ./helm-install.sh
+./krew-install.sh
 ./namespace-create.sh $NAMESPACE
 ./cert-manager-install.sh -f $CONFIG_FILE $NAMESPACE
 ./public-docker-registry-install.sh -f $CONFIG_FILE $NAMESPACE
@@ -51,6 +52,8 @@ These articles are listed in the order in order you should read them. Later arti
     * [Deploy Certificate Manager](docs/deploy-cert-manager.md)
     * TBD - [Add HTTPS To An Applicaton](docs/add_https_to_an_application.md)
 * [Deploy Helm](docs/deploy-helm.md) - a package manager for k8s.
+* See https://krew.sigs.k8s.io/ to learn about a plugin manager for kubectl
+* See https://github.com/ishantanu/awesome-kubectl-plugins to read about kubectl plugins.
 * Databases
     * [Deploy MySQL](docs/deploy-mysql.md)
     * [Deploy PostgreSQL](docs/deploy-postgresql.md)
@@ -172,8 +175,6 @@ Log Levels
 -v=9 curl command
 -v=8 request and response body
 -v=6 method and apipath
-
-kubectl krew search
 
 #powerofkubectl
 
@@ -409,3 +410,9 @@ https://github.com/Shopify/krane - A command-line tool that helps you ship chang
 https://get-kapp.io/ -  kapp is a simple deployment tool focused on the concept of "Kubernetes application" — a set of resources with the same label.
 
 https://fluxcd.io/ -  The GitOps operator for Kubernetes
+
+https://kubesec.io/ - Security risk analysis for Kubernetes resources
+
+https://kudo.dev/ - The Kubernetes Universal Declarative Operator
+
+https://troubleshoot.sh/ - Deliver More Reliable and Predictable Kubernetes Applications

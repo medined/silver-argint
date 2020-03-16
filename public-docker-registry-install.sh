@@ -250,6 +250,17 @@ spec:
 EOF
 kubectl apply -f yaml/registry-ingress.yaml
 
+kubectl get secret docker-registry-credentials >/dev/null 2>&1
+if [ $? == 0 ]; then
+  echo "Secret exists: docker-registry-credentials"
+else
+  kubectl create secret docker-registry \
+    docker-registry-credentials \
+    --docker-server=$REGISTRY_HOST \
+    --docker-username=admin \
+    --docker-password=$PASSWORD
+fi
+
 echo "----------------"
 echo "The docker registry will soon be ready to accept requests. Please wait a few minutes."
 echo 
