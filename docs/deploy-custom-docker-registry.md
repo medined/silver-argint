@@ -4,29 +4,37 @@
 
 * https://www.nearform.com/blog/how-to-run-a-public-docker-registry-in-kubernetes/
 
-## Prequisites
-
-* [Deploy Certificate Manager](deploy-cert-manager.md)
-* a sandbox namespace.
-
 ## Goal
 
+To allow k8s to use images from a private docker registry hosted inside the k8s cluster.
+
+## Prequisites
+
+* A namespace with cert-manager deployed.
+
+## Scripted Process
+
 ```
-curl -u user:pass https://registry.va-oit.cloud/v2/catalog
+CONFIG_FILE="$HOME/va-oit.cloud.env"
+NAMESPACE=sandbox
+./custom-docker-registry-install.sh -f $CONFIG_FILE $NAMESPACE
 ```
 
-## Steps
+## Manual Process
+
+After deploying the docker registry, this process shows how to pull an image from the registry for a pod.
 
 * Create a vanity URL using the steps [here](create-vanity-url.md). Use `registry` as the service name.
 
 * Export some variables to parameterize later steps.
 
 ```
-export REGISTRY_HOST=registry.$NAME
+export NAMESPACE=sandbox
 export ISSUER_REF=letsencrypt-production-issuer
+export REGISTRY_HOST=registry.va-oit.cloud
 ```
 
-* Request a PKI cerificate. Notce that the namespace is specified in the manifest file.
+* Request a PKI cerificate. Notice that the namespace is specified in the manifest file.
 
 ```
 cat <<EOF > yaml/registry-certificate.yaml
@@ -34,7 +42,7 @@ apiVersion: cert-manager.io/v1alpha2
 kind: Certificate
 metadata:
   name: docker-registry
-  namespace: sandbox
+  namespace: $NAMESPACE
 spec:
   secretName: docker-registry-tls-certificate
   issuerRef:
@@ -45,10 +53,10 @@ EOF
 kubectl apply -f yaml/registry-certificate.yaml
 ```
 
-* Switch to the sandbox namespace.
+* Switch to the namespace.
 
 ```
-kubectl config set-context --current --namespace=sandbox
+kubectl config set-context --current --namespace=$NAMESPACE
 ```
 
 * Check the certificate status.
@@ -76,7 +84,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: docker-registry
-  namespace: sandbox
+  namespace: $NAMESPACE
 type: Opaque
 data:
   HTPASSWD: $HTPASSWORD
@@ -92,7 +100,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: docker-registry
-  namespace: sandbox
+  namespace: $NAMESPACE
 data:
   registry-config.yml: |
     version: 0.1
@@ -129,7 +137,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: docker-registry
-  namespace: sandbox
+  namespace: $NAMESPACE
   labels:
     name: docker-registry
 spec:
@@ -218,7 +226,9 @@ EOF
 kubectl apply -f yaml/registry-ingress.yaml
 ```
 
-* Test the registry.
+### Test the Registry
+
+* Use curl to list the catalog.
 
 ```
 curl -u admin:$PASSWORD https://$REGISTRY_HOST/v2/_catalog
@@ -242,3 +252,78 @@ curl -u admin:$PASSWORD https://$REGISTRY_HOST/v2/_catalog
 ```
 
 * The script `docker-registry-login.sh` can be used to automatically log into the registry.
+
+### Create Secret To Hold Registry Credentials 
+
+This secret hold the credentials needed for k8s to pull images from a private registry.
+
+```
+kubectl get secret docker-registry-credentials >/dev/null 2>&1
+if [ $? == 0 ]; then
+  echo "Secret exists: docker-registry-credentials"
+else
+  kubectl create secret docker-registry \
+    docker-registry-credentials \
+    --docker-server=$REGISTRY_HOST \
+    --docker-username=admin \
+    --docker-password=$PASSWORD
+fi
+```
+
+### Demonstrate Pulling Image From Custom Registry
+
+In order to demonstrate pullin an image from the custom registry, you'll:
+
+* create an image with a known file.
+* push it.
+* create a pod.
+* use exec to list the known file.
+
+First, create an image.
+
+```
+mkdir /tmp/custom-registry-test
+pushd /tmp/custom-registry-test
+
+echo <<EOF > Dockerfile
+FROM nginx
+RUN echo "AAA" > /custom-registry.test.file
+EOF
+
+docker login https://$REGISTRY_HOST -u admin -p $PASSWORD
+docker build -t nginx-test:latest
+docker tag nginx-test:latest $REGISTRY_HOST/nginx-test:latest
+docker push $REGISTRY_HOST/nginx-test:latest
+```
+
+Now create a pod to use that image.
+
+```
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: registry-secret-demo
+spec:
+  volumes:
+  - name: shared-data
+    emptyDir: {}
+  containers:
+  - name: nginx
+    image: $REGISTRY_HOST/nginx-test:latest
+    imagePullPolicy: Always
+    volumeMounts:
+    - name: shared-data
+      mountPath: /usr/share/nginx/html
+  hostNetwork: true
+  dnsPolicy: Default
+  imagePullSecrets:
+  - name: docker-registry-credentials
+EOF
+```
+
+Lastly, list the root directory to see the `/custom-registry.test.file` file.
+
+```
+kubectl exec -it registry-secret-demo -- ls -l /
+```

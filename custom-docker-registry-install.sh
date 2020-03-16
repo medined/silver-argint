@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# This script installs a public docker registry into k8s.
-#  https://www.nearform.com/blog/how-to-run-a-public-docker-registry-in-kubernetes/
+# This script installs a custom docker registry into k8s.
+#  https://www.nearform.com/blog/how-to-run-a-custom-docker-registry-in-kubernetes/
 #
 # GOAL:
 #   curl -u user:pass https://registry.va-oit.cloud/v2/catalog
@@ -250,6 +250,9 @@ spec:
 EOF
 kubectl apply -f yaml/registry-ingress.yaml
 
+# Create a secret that allows k8s to pull from the
+# newly created registry.
+
 kubectl get secret docker-registry-credentials >/dev/null 2>&1
 if [ $? == 0 ]; then
   echo "Secret exists: docker-registry-credentials"
@@ -260,6 +263,13 @@ else
     --docker-username=admin \
     --docker-password=$PASSWORD
 fi
+
+# Note: The command below will retrieve and code the secret.
+#
+# kubectl get secret \
+#   docker-registry-credentials \
+#   --output="jsonpath={.data.\.dockerconfigjson}" | \
+#   base64 --decode;echo
 
 echo "----------------"
 echo "The docker registry will soon be ready to accept requests. Please wait a few minutes."

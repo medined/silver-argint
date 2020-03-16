@@ -25,7 +25,7 @@ source ./cluster-create.sh -f $CONFIG_FILE
 ./krew-install.sh
 ./namespace-create.sh $NAMESPACE
 ./cert-manager-install.sh -f $CONFIG_FILE $NAMESPACE
-./public-docker-registry-install.sh -f $CONFIG_FILE $NAMESPACE
+./custom-docker-registry-install.sh -f $CONFIG_FILE $NAMESPACE
 ./jenkins-helm-set-admin-password-secret.sh $NAMESPACE $JENKINS_ADMIN_PASSWORD
 ./jenkins-helm-install.sh -f $CONFIG_FILE $NAMESPACE
 ./jenkins-proxy-start.sh $NAMESPACE
