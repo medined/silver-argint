@@ -68,7 +68,6 @@ These articles are listed in the order in order you should read them. Later arti
 
 ## Research
 
-* https://www.serverlab.ca/tutorials/development/nodejs/containerizing-a-node-js-rest-api-for-kubernetes/ - how to handle backend secrets.
 * [Deploy Harbor](docs/deploy-harbor.md)
 * S3 for storage
 * HTTPS for security
@@ -83,6 +82,9 @@ These articles are listed in the order in order you should read them. Later arti
 * How to rollback deployments
 * How to do a rolling deployment
 * maria database
+* https://buildbot.net/
+* https://www.gocd.org/
+    * https://www.gocd.org/kubernetes/
 * pgadmin
 * phpmyadmin
 * prometheus
@@ -397,22 +399,24 @@ DATABASE
 
 https://vitess.io/ - massively scalable MySQL.
 
-SERVERLESS
+* SERVERLESS
+    * https://fission.io - https://www.youtube.com/watch?v=9hiOn9YJzFw - Open source, Kubernetes-native Serverless Framework - !!! No need to build image !!! 
+    * https://www.openfaas.com/
+    * https://knative.dev/ - 
+* Miscellaneous
+    * https://github.com/Shopify/krane - A command-line tool that helps you ship changes to a Kubernetes namespace and understand the result
+    * https://get-kapp.io/ -  kapp is a simple deployment tool focused on the concept of "Kubernetes application" — a set of resources with the same label.
+    * https://fluxcd.io/ -  The GitOps operator for Kubernetes
+    * https://kubesec.io/ - Security risk analysis for Kubernetes resources
+    * https://kudo.dev/ - The Kubernetes Universal Declarative Operator
+    * https://troubleshoot.sh/ - Deliver More Reliable and Predictable Kubernetes Applications
+    * https://www.serverlab.ca/tutorials/development/nodejs/containerizing-a-node-js-rest-api-for-kubernetes/ - how to handle backend secrets.
+    * https://kubecloud.com - the true learn-by-doing platform.
+    * https://www.youtube.com/watch?v=80Ew_fsV4rM - Kubernetes Ingress Tutorial for Beginners | simply explained
+    * https://github.com/slipway-gitops/slipway - GitOps by Commit Hash
+    * https://skaffold.dev - Skaffold handles the workflow for building, pushing and deploying your application, allowing you to focus on what matters most: writing code
+        * https://caylent.com/kubernetes-development-in-real-time-with-skaffold
+    * https://tech.goglides.com/2020/03/13/stop-using-kubeconfig-with-admin-access
+    * https://litmuschaos.io - cloud-native chaos engineering for kubernetes developers
+    * https://containo.us/maesh/ - Maesh is a straight-forward, easy to configure, and non-invasive service mesh that allows visibility and management of the traffic flows inside any Kubernetes cluster.
 
-https://fission.io - https://www.youtube.com/watch?v=9hiOn9YJzFw - Open source, Kubernetes-native Serverless Framework - !!! No need to build image !!! 
-
-https://www.openfaas.com/
-
-https://knative.dev/ - 
-
-https://github.com/Shopify/krane - A command-line tool that helps you ship changes to a Kubernetes namespace and understand the result
-
-https://get-kapp.io/ -  kapp is a simple deployment tool focused on the concept of "Kubernetes application" — a set of resources with the same label.
-
-https://fluxcd.io/ -  The GitOps operator for Kubernetes
-
-https://kubesec.io/ - Security risk analysis for Kubernetes resources
-
-https://kudo.dev/ - The Kubernetes Universal Declarative Operator
-
-https://troubleshoot.sh/ - Deliver More Reliable and Predictable Kubernetes Applications

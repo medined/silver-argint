@@ -45,7 +45,7 @@ echo "TOKEN: $TOKEN"
 firefox http://localhost:8080
 ```
 
-* In Jenkins, create a credential which can be used to connect to a kubernetes cluster. The ID below is the credentialSId needed in the pipeline.
+* In Jenkins, create a credential which can be used to connect to a kubernetes cluster. The ID below is the credentials needed in the pipeline.
     * Click Credentials.
     * Click System.
     * Clck Add domain.
