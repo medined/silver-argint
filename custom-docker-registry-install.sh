@@ -29,7 +29,34 @@ if [ -z $DOMAIN_NAME ]; then
 fi
 
 SERVICE_NAME=registry
-ISSUER_REF=letsencrypt-production-issuer
+REGISTRY_HOST="$SERVICE_NAME.$DOMAIN_NAME"
+ISSUER="letsencrypt-production-issuer"
+
+# Does the hosted zone exist?
+
+export HOSTED_ZONE_ID=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name==\`$DOMAIN_NAME.\`].Id" --output text)
+if [ -z $HOSTED_ZONE_ID ]; then
+  echo "Domain [$DOMAIN_NAME] is missing from Route53."
+  echo "This script only works with domains hosted by Route53."
+  exit
+else
+  echo "Hosted Zone exists: $DOMAIN_NAME - $HOSTED_ZONE_ID"
+fi
+
+# Does the sub-domain exist?
+
+ENTRY=$(aws route53 list-resource-record-sets \
+  --hosted-zone-id $HOSTED_ZONE_ID \
+  --query "ResourceRecordSets[?(Name==\`$REGISTRY_HOST.\` && Type==\`CNAME\`)].Name" \
+  --output text)
+if [ -z $ENTRY ]; then
+  echo "ERROR: Vanity domain missing: - $REGISTRY_HOST"
+  exit
+else
+  echo "Vanity domain exists: $REGISTRY_HOST"
+fi
+
+# Does the namespace exist?
 
 kubectl get namespace $NAMESPACE 1>/dev/null 2>&1
 if [ $? != 0 ]; then
@@ -40,7 +67,7 @@ else
     echo "Namespace exists: $NAMESPACE"
 fi
 
-ISSUER="letsencrypt-production-issuer"
+# Does the issuer exist?
 
 kubectl get issuer $ISSUER 1>/dev/null 2>&1
 if [ $? != 0 ]; then
@@ -51,13 +78,6 @@ else
     echo "Issuer exists: $ISSUER"
 fi
 
-REGISTRY_HOST="$SERVICE_NAME.$DOMAIN_NAME"
-
-echo "Does vanity domain, $REGISTRY_HOST, exist?"
-echo "  If not, please run ./create-vanity-url.sh"
-echo
-read -p "Press ^C to exit script. Press <ENTER> to continue."
-
 cat <<EOF > yaml/registry-certificate.yaml
 apiVersion: cert-manager.io/v1alpha2
 kind: Certificate
@@ -67,7 +87,7 @@ metadata:
 spec:
   secretName: docker-registry-tls-certificate
   issuerRef:
-    name: $ISSUER_REF
+    name: $ISSUER
   dnsNames:
   - $REGISTRY_HOST
 EOF
@@ -234,7 +254,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    certmanager.k8s.io/issuer: $ISSUER_REF
+    certmanager.k8s.io/issuer: $ISSUER
 spec:
   tls:
   - hosts:

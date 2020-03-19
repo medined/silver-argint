@@ -1,57 +1,64 @@
 #!/bin/bash
 
-if [ $# -ne 2 ]; then
-  echo "Usage: $0 <service> <domain_name>"
+if [ $# -ne 4 ]; then
+  echo "Usage: -f [configuration file] <namespace> <service>"
   echo
   echo "This script creates a vanity URL like register.va-oit.cloud using Route53."
   exit
 fi
 
-SERVICE_NAME=$1
-DOMAIN_NAME=$2
+if [ "$1" != "-f" ]; then
+    echo "ERROR: Expecting -f parameter."
+    exit
+fi
+
+CONFIG_FILE=$2
+NAMESPACE=$3
+SERVICE_NAME=$4
+
+unset DOMAIN_NAME
+source $CONFIG_FILE
+
+if [ -z $DOMAIN_NAME ]; then
+  echo "ERROR: Missing environment variable: DOMAIN_NAME"
+  return
+fi
 
 NEW_DOMAIN_NAME="$SERVICE_NAME.$DOMAIN_NAME"
 
-#
-# NOTE: How to wait for DNS to propagate. dig is not working reliably.
+# Does the hosted zone exist?
 
-echo "Please run the following command to see if '$NEW_DOMAIN_NAME' already exists."
-echo
-echo "dig $NEW_DOMAIN_NAME"
-echo
-echo "If it does not exist, press <ENTER>. Otherwise, press ^C to end this script."
-echo
-read -p "Press <ENTER> to continue."
+export HOSTED_ZONE_ID=$(aws route53 list-hosted-zones-by-name --query "HostedZones[?Name==\`$DOMAIN_NAME.\`].Id" --output text)
+if [ -z $HOSTED_ZONE_ID ]; then
+  echo "Domain [$DOMAIN_NAME] is missing from Route53."
+  echo "This script only works with domains hosted by Route53."
+  exit
+else
+  echo "Hosted Zone exists: $DOMAIN_NAME - $HOSTED_ZONE_ID"
+fi
 
-export HOSTED_ZONE_ID=$( \
-  aws route53 list-hosted-zones-by-name \
-    --query "HostedZones[?Name==\`$DOMAIN_NAME.\`].Id" \
-    --output text \
-)
+# Does the sub-domain exist?
+
+ENTRY=$(aws route53 list-resource-record-sets \
+  --hosted-zone-id $HOSTED_ZONE_ID \
+  --query 'ResourceRecordSets[?(Name==`r$NEW_DOMAIN_NAME.` && Type==`CNAME`)].Name' \
+  --output text)
+if [ ! -z $ENTRY ]; then
+  echo "Sub-domain exists in Route53 - $NEW_DOMAIN_NAME"
+  echo "use 'dig $NEW_DOMAIN_NAME' to see if it has propagated yet."
+  exit
+fi
 
 SAFE_DOMAIN_NAME=$(echo $DOMAIN_NAME | tr '.' '-')
 
-echo "NEW_DOMAIN_NAME: $NEW_DOMAIN_NAME"
-echo "HOSTED_ZONE_ID: $HOSTED_ZONE_ID"
-echo "SAFE_DOMAIN_NAME: $SAFE_DOMAIN_NAME"
-
-helm list | grep $SAFE_DOMAIN_NAME > /dev/null
+kubectl get service --namespace $NAMESPACE "$NAMESPACE-nginx-ingress-controller"
 if [ $? != 0 ]; then
-    helm install $SAFE_DOMAIN_NAME stable/nginx-ingress
-    sleep 10
+  echo "ERROR: Install ingress in the $NAMESPACE namespace before continuing."
+  exit
 fi
 
-K8S_HOSTNAME=$(kubectl get service $SAFE_DOMAIN_NAME-nginx-ingress-controller -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+K8S_HOSTNAME=$(kubectl get service $NAMESPACE-nginx-ingress-controller -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 echo "K8S_HOSTNAME: $K8S_HOSTNAME"
-
-#
-# NOTE: How to wait for DNS to propagate. dig is not working reliably.
-
-echo "Please run the following command repeatly until the DNS entry has been propagated."
-echo
-echo "dig $K8S_HOSTNAME"
-echo
-read -p "Press <ENTER> to continue."
 
 cat <<EOF > json/dns-action.json
 {
@@ -78,11 +85,8 @@ aws route53 change-resource-record-sets \
   --change-batch file://json/dns-action.json
 
 #
-# NOTE: How to wait for DNS to propagate. dig is not working reliably.
-
-echo "Your new vanity URL will be ready in a few minutes. When it is ready, please"
-echo "press <ENTER>."
+echo "Your new vanity sub-domain will be ready in a few minutes. Use the following command"
+echo "to know when the the DNS entry has been propagated."
 echo
 echo "dig $NEW_DOMAIN_NAME"
 echo
-read -p "Press <ENTER> to continue."

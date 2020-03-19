@@ -158,6 +158,9 @@ else
     echo "local kops key pair: Copied - $LOCAL_PEM_FILE"
 fi
 
+# make sure the pem file is read only.
+chmod 600 $LOCAL_PEM_FILE
+
 # Create a public key from the pem file.
 if [ -f $LOCAL_PUB_FILE ]; then
     echo "local kops public key: Exists - $LOCAL_PUB_FILE"
@@ -173,15 +176,19 @@ COREOS_AMI=$(curl -s https://coreos.com/dist/aws/aws-stable.json | jq -r '.["us-
 
 echo "kubernetes cluster: Creating"
 
+DOMAIN_NAME_SAFE=$(echo $DOMAIN_NAME | tr [:upper:] [:lower:] | tr '.' '-')
+DOMAIN_NAME_S3="s3://$DOMAIN_NAME_SAFE-$(echo -n $DOMAIN_NAME | sha256sum | cut -b-10)"
+export KOPS_STATE_STORE="s3://$DOMAIN_NAME_SAFE-$(echo -n $DOMAIN_NAME | sha256sum | cut -b-10)-kops"
+
 $HOME/bin/kops create cluster \
   --cloud=aws \
-  --image $COREOS_AMI \
+  --image=$COREOS_AMI \
   --master-zones=$MASTER_ZONES \
+  --name=$DOMAIN_NAME \
   --node-count=$NODE_COUNT \
-  --ssh-public-key $LOCAL_PUB_FILE \
-  --yes \
+  --ssh-public-key=$LOCAL_PUB_FILE \
   --zones=$AWS_ZONES \
-  $DOMAIN_NAME
+  --yes
 
 RED='\033[0;31m'
 NC='\033[0m'

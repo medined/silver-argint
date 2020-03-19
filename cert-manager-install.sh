@@ -32,7 +32,14 @@ if [ -z $NAMESPACE ]; then
   exit
 fi
 
-./namespace-create.sh $NAMESPACE $ACME_REGISTRATION_EMAIL
+kubectl get namespace $NAMESPACE 1>/dev/null 2>&1
+if [ $? != 0 ]; then
+    echo "ERROR: Missing namespace: $NAMESPACE"
+    echo "  Please run ./namespace-create.sh"
+    exit
+else
+    echo "Namespace exists: $NAMESPACE"
+fi
 
 # Add the helm repository.
 helm repo add jetstack https://charts.jetstack.io

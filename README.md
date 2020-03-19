@@ -25,7 +25,11 @@ source ./cluster-create.sh -f $CONFIG_FILE
 ./krew-install.sh
 ./namespace-create.sh $NAMESPACE
 ./cert-manager-install.sh -f $CONFIG_FILE $NAMESPACE
+
+./create-vanity-url.sh -f $CONFIG_FILE $NAMESPACE registry
 ./custom-docker-registry-install.sh -f $CONFIG_FILE $NAMESPACE
+
+./create-vanity-url.sh -f $CONFIG_FILE $NAMESPACE jenkins
 ./jenkins-helm-set-admin-password-secret.sh $NAMESPACE $JENKINS_ADMIN_PASSWORD
 ./jenkins-helm-install.sh -f $CONFIG_FILE $NAMESPACE
 ./jenkins-proxy-start.sh $NAMESPACE
@@ -37,6 +41,8 @@ source ./cluster-create.sh -f $CONFIG_FILE
 
 These articles are listed in the order in order you should read them. Later articles uses the K8S resources created in earlier articles.
 
+* System Administration
+    * [Introduction To dig, the DNS Lookup Utility](docs/intro-to-dig.md)
 * [Gentle Intro To Kubernetes](docs/gentle_introduction_to_kubernetes.md)
 * [Curated Videos From Cloud Native Computing Foundation](docs/currated_video_list.md)
 * kops
