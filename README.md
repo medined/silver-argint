@@ -32,6 +32,7 @@ source ./cluster-create.sh -f $CONFIG_FILE
 ./create-vanity-url.sh -f $CONFIG_FILE $NAMESPACE jenkins
 ./jenkins-helm-set-admin-password-secret.sh $NAMESPACE $JENKINS_ADMIN_PASSWORD
 ./jenkins-helm-install.sh -f $CONFIG_FILE $NAMESPACE
+./jenkins-helm-check.sh $NAMESPACE
 ./jenkins-proxy-start.sh $NAMESPACE
 ```
 
@@ -53,7 +54,7 @@ These articles are listed in the order in order you should read them. Later arti
 * [Deploy Dashboard](docs/deploy-dashboard.md) - insight into k8s resources.
 * [Create sandbox namespace](docs/create-sandbox-namespace.md)
 * [Run a shell inside the cluster](docs/run-shell-inside-cluster.md)
-* [Create Node application](docs/create-node-application.md)
+* [Create Node application](docs/create-nodejs-application.md)
 * Certificate Manager
     * [Deploy Certificate Manager](docs/deploy-cert-manager.md)
     * TBD - [Add HTTPS To An Applicaton](docs/add_https_to_an_application.md)
@@ -69,6 +70,8 @@ These articles are listed in the order in order you should read them. Later arti
 * [Deploy Jenkins](docs/deploy-jenkins.md)
 * [Update Jenkins With Cluster Credentials](docs/update-jenkins-with-cluster-credentials.md)
 * [Switch Between K8S Clusters](docs/switch-between-k8s-clusters.md)
+* DistroLess
+    * [Introduction To DistroLess](docs/intro-to-distrless.md)
 
 ## In Progress
 

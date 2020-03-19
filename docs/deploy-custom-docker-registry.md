@@ -285,15 +285,18 @@ First, create an image.
 mkdir /tmp/custom-registry-test
 pushd /tmp/custom-registry-test
 
-echo <<EOF > Dockerfile
+REGISTRY_HOST=registry.va-oit-green.cloud
+
+cat <<EOF > Dockerfile
 FROM nginx
 RUN echo "AAA" > /custom-registry.test.file
 EOF
 
-docker login https://$REGISTRY_HOST -u admin -p $PASSWORD
-docker build -t nginx-test:latest
+./custom-docker-registry-login.sh
+docker build -t nginx-test:latest .
 docker tag nginx-test:latest $REGISTRY_HOST/nginx-test:latest
 docker push $REGISTRY_HOST/nginx-test:latest
+popd
 ```
 
 Now create a pod to use that image.
@@ -326,4 +329,10 @@ Lastly, list the root directory to see the `/custom-registry.test.file` file.
 
 ```
 kubectl exec -it registry-secret-demo -- ls -l /
+```
+
+After testing, you can delete the pod.
+
+```
+kubectl delete pod registry-secret-demo
 ```

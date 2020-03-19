@@ -117,4 +117,8 @@ else
   echo "Cluster Role Binding exists: $CRB_NAME"
 fi
 
-./jenkins-proxy-start.sh
+echo
+echo "Run the following command. Wait until the pods are ready."
+echo
+echo "  ./jenkins-helm-check.sh $NAMESPACE"
+echo

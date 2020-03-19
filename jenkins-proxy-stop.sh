@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NAMESPACE=sandbox
+NAMESPACE=${1:-sandbox}
 NAME=jenkins
 
 ps f | grep "kubectl --namespace $NAMESPACE port-forward $NAME" | grep -v grep > /dev/null
