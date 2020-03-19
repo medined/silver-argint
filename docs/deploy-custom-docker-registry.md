@@ -24,14 +24,25 @@ NAMESPACE=sandbox
 
 After deploying the docker registry, this process shows how to pull an image from the registry for a pod.
 
-* Create a vanity URL using the steps [here](create-vanity-url.md). Use `registry` as the service name.
-
-* Export some variables to parameterize later steps.
+* Does the namespace exist?
 
 ```
 export NAMESPACE=sandbox
+kubectl get namespace $NAMESPACE
+```
+
+* Create a vanity URL using the steps [here](create-vanity-url.md). Use `registry` as the service name.
+
+```
+export DOMAIN_NAME="va-oit-green.cloud"
+export REGISTRY_HOST=registry.$DOMAIN_NAME
+```
+
+* Does the certificate issuer exist?
+
+```
 export ISSUER_REF=letsencrypt-production-issuer
-export REGISTRY_HOST=registry.va-oit.cloud
+kubectl get issuer $ISSUER_REF
 ```
 
 * Request a PKI cerificate. Notice that the namespace is specified in the manifest file.
@@ -65,19 +76,28 @@ kubectl config set-context --current --namespace=$NAMESPACE
 kubectl describe certificate docker-registry
 ```
 
-* Create a secret password for the `admin` user. The image is pulled before use so that we can capture stdout cleanly.
+* Save an admin password for the registry.
 
 ```
-PASSWORD=$(uuid)
+export PASSWORD=$(uuid)
 
-# Store the password for future use. This file is ignored by git.
-echo $PASSWORD > password-docker-registry.txt
-chmod 600 password-docker-registry.txt
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+    name: docker-registry-admin-password
+    namespace: $NAMESPACE
+data:
+    password: $(echo $PASSWORD | base64)
+EOF
+```
 
+* Encrypt the password using `htpasswd` which the docker registry understands.
+
+```
 docker pull registry:2
 HTPASSWORD=$(docker run --entrypoint htpasswd --rm registry:2 -Bbn admin $PASSWORD | base64 --wrap 92)
-echo "ADMIN Password: $PASSWORD"
-echo "HTPASSWORD: $HTPASSWORD"
 
 cat <<EOF > yaml/registry-admin-password-secret.yaml
 apiVersion: v1
