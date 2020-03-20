@@ -41,7 +41,7 @@ fi
 
 ENTRY=$(aws route53 list-resource-record-sets \
   --hosted-zone-id $HOSTED_ZONE_ID \
-  --query 'ResourceRecordSets[?(Name==`r$NEW_DOMAIN_NAME.` && Type==`CNAME`)].Name' \
+  --query 'ResourceRecordSets[?(Name==`$NEW_DOMAIN_NAME.` && Type==`CNAME`)].Name' \
   --output text)
 if [ ! -z $ENTRY ]; then
   echo "Sub-domain exists in Route53 - $NEW_DOMAIN_NAME"
