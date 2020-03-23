@@ -102,6 +102,15 @@ else
     echo "kops: Installed"
 fi
 
+if [ -f $HOME/bin/jq ]; then
+  echo "jq: installed"
+else
+  echo "jq: installing"
+  curl -L -o $HOME/bin/jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+  chmod +x $HOME/bin/jq
+  echo "jq: Installed"
+fi
+
 TEMPDIR=/tmp
 
 DOMAIN_NAME_SAFE=$(echo $DOMAIN_NAME | tr [:upper:] [:lower:] | tr '.' '-')
@@ -176,7 +185,7 @@ fi
 # make sure the pki files have the right permissions.
 chmod 600 $LOCAL_PEM_FILE $LOCAL_PUB_FILE
 
-COREOS_AMI=$(curl -s https://coreos.com/dist/aws/aws-stable.json | jq -r '.["us-east-1"].hvm')
+COREOS_AMI=$(curl -s https://coreos.com/dist/aws/aws-stable.json | $HOME/bin/jq -r '.["us-east-1"].hvm')
 
 echo "kubernetes cluster: Creating"
 
