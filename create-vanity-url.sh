@@ -17,6 +17,10 @@ NAMESPACE=$3
 SERVICE_NAME=$4
 
 unset DOMAIN_NAME
+if [ ! -f $CONFIG_FILE ]; then
+    echo "ERROR: Missing configuration file: $CONFIG_FILE"
+    return
+fi
 source $CONFIG_FILE
 
 if [ -z $DOMAIN_NAME ]; then

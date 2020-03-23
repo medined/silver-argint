@@ -19,6 +19,11 @@ unset ACME_REGISTRATION_EMAIL
 
 CONFIG_FILE=$2
 NAMESPACE=$3
+
+if [ ! -f $CONFIG_FILE ]; then
+    echo "ERROR: Missing configuration file: $CONFIG_FILE"
+    return
+fi
 source $CONFIG_FILE
 
 SERVICE="cert-manager"

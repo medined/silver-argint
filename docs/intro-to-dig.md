@@ -39,3 +39,18 @@ PING finder.cox.net (92.242.142.2) 56(84) bytes of data.
 Notice that the IP address of `finder.cox.net` is on the same subnet (92.242.0.0/21 perhaps).
 
 The result is that if you see 92.242.X.Y in the `dig` results, the domain name is not being found.
+
+## DNS Checker
+
+If you want an independent source of truth about your domain names, consider using [DNS Checker](https://dnschecker.org/). It has the following tools:
+
+
+* Domain DNS Validation
+* Reverse DNS Lookup - IP to hostname
+* DNS Lookup
+* NS Lookup
+* MX Lookup
+* Flush DNS
+* DMARC Validation
+* DNS Health Report
+* MX Record Validation

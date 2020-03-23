@@ -15,6 +15,10 @@ fi
 unset DOMAIN_NAME
 
 CONFIG_FILE=$2
+if [ ! -f $CONFIG_FILE ]; then
+    echo "ERROR: Missing configuration file: $CONFIG_FILE"
+    return
+fi
 source $CONFIG_FILE
 
 if [ -z $DOMAIN_NAME ]; then

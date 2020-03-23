@@ -42,6 +42,10 @@ unset MASTER_ZONES
 unset NODE_COUNT
 
 CONFIG_FILE=$2
+if [ ! -f $CONFIG_FILE ]; then
+    echo "ERROR: Missing configuration file: $CONFIG_FILE"
+    return
+fi
 source $CONFIG_FILE
 
 if [ -z $AWS_ACCESS_KEY_ID ]; then
@@ -115,7 +119,7 @@ aws s3 ls $DOMAIN_NAME_S3 >/dev/null 2>&1
 if [ $? == 0 ]; then
     echo "s3 domain store: Exists - $DOMAIN_NAME_S3"
 else
-    aws s3 mb $DOMAIN_NAME_S3 >/dev/null 2>&1
+    aws s3 mb $DOMAIN_NAME_S3 >/dev/null 2>&1 
     echo "s3 domain store: Created - $DOMAIN_NAME_S3"
 fi
 
