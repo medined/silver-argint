@@ -34,7 +34,7 @@ echo "The load balancer for this namespace will be ready shortly."
 echo
 echo "Use the following command to get its endpoint."
 echo
-echo "  kubectl get service $NAMESPACE-nginx-ingress-controller -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+echo "  kubectl get service $NAMESPACE-nginx-ingress-controller -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'; echo"
 echo
 echo "Use dig to determine when it is propagated and safe to use. This will take several minutes."
 echo

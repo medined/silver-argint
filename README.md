@@ -39,6 +39,7 @@ These articles are listed in the order in order you should read them. Later arti
 * [Update Jenkins With Cluster Credentials](docs/update-jenkins-with-cluster-credentials.md)
 * [Switch Between K8S Clusters](docs/switch-between-k8s-clusters.md)
 * Security
+    * [Add HTTPS To Application](docs/add_https_to_an_application.md)
     * [Introduction To Pod Security Policy](docs/intro-to-pod-security-policy.md)
 * Testing
     * Security

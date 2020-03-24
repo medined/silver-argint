@@ -15,9 +15,9 @@ MASTER_ZONES=us-east-1a
 NODE_COUNT=2
 EOF
 
-CONFIG_FILE="$HOME/va-oit.cloud.env"
+CONFIG_FILE="$HOME/david.va-oit.cloud.env"
 NAMESPACE=sandbox
-JENKINS_ADMIN_PASSWORD=<password>
+JENKINS_ADMIN_PASSWORD=$(cat ~/password-jenkins.txt)
 source ./cluster-create.sh -f $CONFIG_FILE
 ./dashboard-proxy-start.sh
 ./helm-install.sh

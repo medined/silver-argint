@@ -59,6 +59,9 @@ else
     echo "Helm chart exists: $SERVICE"
 fi
 
+echo "Waiting 10 seconds for resources to spin up. Adjust as needed."
+sleep 10
+
 cat <<EOF > yaml/certificate-issuer.yaml
 apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
