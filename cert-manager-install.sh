@@ -7,6 +7,7 @@
 
 if [ $# -ne 3 ]; then
   echo "Usage: -f [configuration file] <namespace>"
+  echo "  only $# parameters were provided."
   exit
 fi
 

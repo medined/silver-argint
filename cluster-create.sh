@@ -81,6 +81,10 @@ fi
 # downloaded software will be placed.
 
 [ -d $HOME/bin ] || mkdir $HOME/bin
+grep "^export PATH=[$]PATH:[$]HOME/bin$" $HOME/.bashrc > /dev/null
+if [ $? != 0 ]; then
+    echo 'export PATH=$PATH:$HOME/bin' >> $HOME/.bashrc
+fi
 
 if [ -f $HOME/bin/kubectl ]; then
     echo "kubectl: Installed"
