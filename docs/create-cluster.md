@@ -5,6 +5,10 @@
 * https://kubernetes.io/docs/setup/production-environment/tools/kops/
 * https://kubernetes.io/docs/tasks/tools/install-kubectl/
 
+## Using Existing VPC and Subnets
+
+See [HA Cluster](docs/create-ha-cluster.md).
+
 ## Manual Steps
 
 * Update AWS configuration file, `$HOME/.aws/credentials`. Set AWS_PROFILE in `$HOME/.bashrc`.

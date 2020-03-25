@@ -13,7 +13,7 @@
 #  MASTER_ZONES=us-east-1a
 #  NODE_COUNT=2
 #  VPC_ID=<vpc_id>  -- optional
-#  SUBNET_IDS=<comma_delimited_subnet_id_list>  -- optional
+#  SUBNET_ID=<subnet_id>  -- optional
 
 #####
 # Using an existing VPC:
@@ -47,7 +47,7 @@ unset AWS_ZONES
 unset DOMAIN_NAME
 unset MASTER_ZONES
 unset NODE_COUNT
-unset SUBNET_IDS
+unset SUBNET_ID
 unset VPC_ID
 
 CONFIG_FILE=$2
@@ -69,7 +69,7 @@ if [ -z $AWS_REGION ]; then
   echo "ERROR: Missing environment variable: AWS_REGION"
   return
 fi
-if [ -z "$AWS_ZONES" ]; then
+if [ -z $AWS_ZONES ]; then
   echo "ERROR: Missing environment variable: AWS_ZONES"
   return
 fi
@@ -77,7 +77,7 @@ if [ -z $DOMAIN_NAME ]; then
   echo "ERROR: Missing environment variable: DOMAIN_NAME"
   return
 fi
-if [ -z "$MASTER_ZONES" ]; then
+if [ -z $MASTER_ZONES ]; then
   echo "ERROR: Missing environment variable: MASTER_ZONES"
   return
 fi
@@ -87,8 +87,8 @@ if [ -z $NODE_COUNT ]; then
 fi
 
 if [ ! -z $VPC_ID ]; then
-  if [ -z "$SUBNET_IDS" ]; then
-    echo "ERROR: VPC specified, but missing environment variable: SUBNET_IDS"
+  if [ -z $SUBNET_ID ]; then
+    echo "ERROR: VPC specified, but missing environment variable: SUBNET_ID"
     return
   fi
   aws ec2 describe-vpcs --vpc-ids $VPC_ID --region $AWS_REGION --query 'Vpcs[].VpcId' --output text | grep $VPC_ID > /dev/null
@@ -96,18 +96,11 @@ if [ ! -z $VPC_ID ]; then
     echo "ERROR: VPC specified, but not found: $VPC_ID"
     return
   fi
-
-  ###
-  # TBD
-  #
-  # Deal with multiple subnet ids.
-  ###
-
-  # aws ec2 describe-subnets --subnet-ids $SUBNET_IDS --region $AWS_REGION --query 'Subnets[].SubnetId' --output text | grep $SUBNET_IDS > /dev/null
-  # if [ $? != 0 ]; then
-  #   echo "ERROR: Subnet specified, but not found: $SUBNET_IDS"
-  #   return
-  # fi
+  aws ec2 describe-subnets --subnet-ids $SUBNET_ID --region $AWS_REGION --query 'Subnets[].SubnetId' --output text | grep $SUBNET_ID > /dev/null
+  if [ $? != 0 ]; then
+    echo "ERROR: Subnet specified, but not found: $SUBNET_ID"
+    return
+  fi
 fi
 
 # Does a bin directory exist in the user's home directory? This is where
@@ -236,24 +229,24 @@ if [ -z $VPC_ID ]; then
   $HOME/bin/kops create cluster \
     --cloud=aws \
     --image=$COREOS_AMI \
-    --master-zones="$MASTER_ZONES" \
+    --master-zones=$MASTER_ZONES \
     --name=$DOMAIN_NAME \
     --node-count=$NODE_COUNT \
     --ssh-public-key=$LOCAL_PUB_FILE \
-    --zones="$AWS_ZONES" \
+    --zones=$AWS_ZONES \
     --yes
 else
   # VPC was specified.
   $HOME/bin/kops create cluster \
     --cloud=aws \
     --image=$COREOS_AMI \
-    --master-zones="$MASTER_ZONES" \
+    --master-zones=$MASTER_ZONES \
     --name=$DOMAIN_NAME \
     --node-count=$NODE_COUNT \
+    --subnets=$SUBNET_ID \
     --ssh-public-key=$LOCAL_PUB_FILE \
-    --subnets="$SUBNET_IDS" \
     --vpc=$VPC_ID \
-    --zones="$AWS_ZONES" \
+    --zones=$AWS_ZONES \
     --yes
 fi
 

@@ -4,8 +4,6 @@ This project has a lot of scripts. The code block below shows one possible order
 
 The VPC_ID parameter is optional. If it is not provided, then a VPC will be created. However, if a VPC is specified, then you need to specify SUBNET_ID
 
-Using multple subnets has not yet be tested.
-
 ```
 cat <<EOF > $HOME/va-oit.cloud.env
 ACME_REGISTRATION_EMAIL=dmedined@crimsongovernment.com

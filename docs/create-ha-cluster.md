@@ -8,6 +8,17 @@ This article shows how to create a multi-master, multi-node cluster.
 
 If you want to know how manually create a cluster see (create-custer.md). This article shows how to use the `cluster-create.sh` script.
 
+## Using Existing VPC and Subnets
+
+Add the following information to the configuration file that is created later in this document. 
+
+```
+VPC_ID=<vpc_id>
+SUBNET_IDS=<comma_delimited_subnet_id_list>
+```
+
+Make sure that the subnets have an associated route table that has an internet gateway (IGW). Otherwise, the nodes in the subnets will not be able to join the cluster.
+
 ### Steps
 
 * Update AWS configuration file, `$HOME/.aws/credentials`. Set AWS_PROFILE in `$HOME/.bashrc`.
