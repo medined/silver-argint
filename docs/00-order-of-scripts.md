@@ -2,6 +2,9 @@
 
 This project has a lot of scripts. The code block below shows one possible order to run them.
 
+The VPC_ID parameter is optional. If it is not provided, then a VPC will be created. However, if a VPC is specified, then you need to specify SUBNET_ID
+
+Using multple subnets has not yet be tested.
 
 ```
 cat <<EOF > $HOME/va-oit.cloud.env
@@ -13,6 +16,8 @@ AWS_ZONES=us-east-1a
 DOMAIN_NAME=va-oit.cloud
 MASTER_ZONES=us-east-1a
 NODE_COUNT=2
+VPC_ID=<vpc_id>
+SUBNET_ID=<subnet_id>
 EOF
 
 CONFIG_FILE="$HOME/david.va-oit.cloud.env"

@@ -40,6 +40,8 @@ unset AWS_ZONES
 unset DOMAIN_NAME
 unset MASTER_ZONES
 unset NODE_COUNT
+unset SUBNET_ID
+unset VPC_ID
 
 CONFIG_FILE=$2
 if [ ! -f $CONFIG_FILE ]; then
@@ -75,6 +77,23 @@ fi
 if [ -z $NODE_COUNT ]; then
   echo "ERROR: Missing environment variable: NODE_COUNT"
   return
+fi
+
+if [ ! -z $VPC_ID ]; then
+  if [ -z $SUBNET_ID ]; then
+    echo "ERROR: VPC specified, but missing environment variable: SUBNET_ID"
+    return
+  fi
+  aws ec2 describe-vpcs --vpc-ids $VPC_ID --region $AWS_REGION --query 'Vpcs[].VpcId' --output text | grep $VPC_ID > /dev/null
+  if [ $? != 0 ]; then
+    echo "ERROR: VPC specified, but not found: $VPC_ID"
+    return
+  fi
+  aws ec2 describe-subnets --subnet-ids $SUBNET_ID --region $AWS_REGION --query 'Subnets[].SubnetId' --output text | grep $SUBNET_ID > /dev/null
+  if [ $? != 0 ]; then
+    echo "ERROR: Subnet specified, but not found: $SUBNET_ID"
+    return
+  fi
 fi
 
 # Does a bin directory exist in the user's home directory? This is where
@@ -145,6 +164,7 @@ else
     echo "s3 kops state store: Created - $KOPS_STATE_STORE"
 fi
 
+
 aws ec2 describe-key-pairs --region us-east-1 --key-names $KEY_PAIR_NAME 1>/dev/null 2>&1
 if [ $? != 0 ]; then
     # The key needs to be created in AWS.
@@ -197,28 +217,33 @@ DOMAIN_NAME_SAFE=$(echo $DOMAIN_NAME | tr [:upper:] [:lower:] | tr '.' '-')
 DOMAIN_NAME_S3="s3://$DOMAIN_NAME_SAFE-$(echo -n $DOMAIN_NAME | sha256sum | cut -b-10)"
 export KOPS_STATE_STORE="s3://$DOMAIN_NAME_SAFE-$(echo -n $DOMAIN_NAME | sha256sum | cut -b-10)-kops"
 
-$HOME/bin/kops create cluster \
-  --cloud=aws \
-  --image=$COREOS_AMI \
-  --master-zones=$MASTER_ZONES \
-  --name=$DOMAIN_NAME \
-  --node-count=$NODE_COUNT \
-  --ssh-public-key=$LOCAL_PUB_FILE \
-  --zones=$AWS_ZONES \
-  --yes
+if [ -z $VPC_ID ]; then
+  # VPC was not specified.
+  $HOME/bin/kops create cluster \
+    --cloud=aws \
+    --image=$COREOS_AMI \
+    --master-zones=$MASTER_ZONES \
+    --name=$DOMAIN_NAME \
+    --node-count=$NODE_COUNT \
+    --ssh-public-key=$LOCAL_PUB_FILE \
+    --zones=$AWS_ZONES \
+    --yes
+else
+  # VPC was specified.
+  $HOME/bin/kops create cluster \
+    --cloud=aws \
+    --image=$COREOS_AMI \
+    --master-zones=$MASTER_ZONES \
+    --name=$DOMAIN_NAME \
+    --node-count=$NODE_COUNT \
+    --subnets=$SUBNET_ID \
+    --ssh-public-key=$LOCAL_PUB_FILE \
+    --vpc=$VPC_ID \
+    --zones=$AWS_ZONES \
+    --yes
+fi
 
-RED='\033[0;31m'
-NC='\033[0m'
-
-while [ "$(kubectl get nodes 2>/dev/null | grep -v STATUS | awk '{print $2}' | sort -u | wc -l)" != "1" ]
-do
-  NOW=$(date '+%Y-%m-%d %H:%M:%S')
-  echo "${RED}$NOW: Waiting 60 seconds for nodes to be ready. Expect errors below.${NC}"
-  kops validate cluster
-  kubectl get nodes
-  sleep 60
-done
-
-
-kops validate cluster
-kubectl get nodes
+echo "The cluster is being created. Use the following commands to determine the status."
+echo
+echo "kops validate cluster"
+echo "kubectl get nodes"
