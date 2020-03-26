@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PID=$(ps fx | grep "kubectl proxy --namespace kubernetes-dashboard" | grep -v grep | cut -d' ' -f1)
+PID=$(ps fx | grep "kubectl proxy --namespace kubernetes-dashboard" | grep -v grep | awk '{print $1}')
 
 if [ -z "$PID" ]; then
   echo "Dashboard proxy not running."

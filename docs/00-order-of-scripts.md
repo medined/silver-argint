@@ -15,7 +15,7 @@ DOMAIN_NAME=va-oit.cloud
 MASTER_ZONES=us-east-1a
 NODE_COUNT=2
 VPC_ID=<vpc_id>
-SUBNET_ID=<subnet_id>
+SUBNET_IDS=<subnet_id>
 EOF
 
 CONFIG_FILE="$HOME/david.va-oit.cloud.env"
@@ -26,18 +26,23 @@ source ./cluster-create.sh -f $CONFIG_FILE
 ./helm-install.sh
 ./krew-install.sh
 ./namespace-create.sh $NAMESPACE
+# pause until the dig answer shows AWS information.
+
 ./cert-manager-install.sh -f $CONFIG_FILE $NAMESPACE
 
 ./istio-install.sh -f $CONFIG_FILE $NAMESPACE
 
 ./create-vanity-url.sh -f $CONFIG_FILE $NAMESPACE registry
+# pause until the dig answer shows AWS information.
 ./custom-docker-registry-install.sh -f $CONFIG_FILE $NAMESPACE
 
 ./create-vanity-url.sh -f $CONFIG_FILE $NAMESPACE jenkins
+# pause until the dig answer shows AWS information.
 ./jenkins-helm-set-admin-password-secret.sh $NAMESPACE $JENKINS_ADMIN_PASSWORD
 ./jenkins-helm-install.sh -f $CONFIG_FILE $NAMESPACE
 ./jenkins-helm-check.sh $NAMESPACE
 ./jenkins-proxy-start.sh $NAMESPACE
+
 ```
 
 ## Future

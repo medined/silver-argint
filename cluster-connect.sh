@@ -34,8 +34,21 @@ if [ -z $DOMAIN_NAME ]; then
   return
 fi
 
+./dashboard-proxy-stop.sh
+./jenkins-proxy-stop.sh
+
 DOMAIN_NAME_SAFE=$(echo $DOMAIN_NAME | tr [:upper:] [:lower:] | tr '.' '-')
 DOMAIN_NAME_S3="s3://$DOMAIN_NAME_SAFE-$(echo -n $DOMAIN_NAME | sha256sum | cut -b-10)"
 export KOPS_STATE_STORE="s3://$DOMAIN_NAME_SAFE-$(echo -n $DOMAIN_NAME | sha256sum | cut -b-10)-kops"
 
 kubectl config use-context $DOMAIN_NAME
+
+if [ ! -z $NAMESPACE ]; then
+  kubectl config set-context --current --namespace=$NAMESPACE
+fi
+
+echo
+echo "Don't forget to start the dashbaord and jenkins proxys if needed."
+echo
+echo "./dashboard-proxy-stop.sh"
+echo "./jenkins-proxy-stop.sh"

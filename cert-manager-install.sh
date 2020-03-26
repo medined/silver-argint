@@ -5,7 +5,7 @@
 # 'certificates as a service' to developers working within your k8s cluster.
 #
 
-if [ $# -ne 3 ]; then
+if [ $# -ne 2 ]; then
   echo "Usage: -f [configuration file] <namespace>"
   echo "  only $# parameters were provided."
   exit
@@ -19,7 +19,6 @@ fi
 unset ACME_REGISTRATION_EMAIL
 
 CONFIG_FILE=$2
-NAMESPACE=$3
 
 if [ ! -f $CONFIG_FILE ]; then
     echo "ERROR: Missing configuration file: $CONFIG_FILE"
@@ -27,47 +26,44 @@ if [ ! -f $CONFIG_FILE ]; then
 fi
 source $CONFIG_FILE
 
-SERVICE="cert-manager"
-
 if [ -z $ACME_REGISTRATION_EMAIL ]; then
   echo "ERROR: Missing environment variable: ACME_REGISTRATION_EMAIL"
   exit
 fi
-if [ -z $NAMESPACE ]; then
-  echo "ERROR: Missing parameter: <namespace>"
-  exit
-fi
 
-kubectl get namespace $NAMESPACE 1>/dev/null 2>&1
-if [ $? != 0 ]; then
-    echo "ERROR: Missing namespace: $NAMESPACE"
-    echo "  Please run ./namespace-create.sh"
-    exit
-else
-    echo "Namespace exists: $NAMESPACE"
-fi
+SERVICE="cert-manager"
+NAMESPACE=cert-manager
+
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: $NAMESPACE
+    labels:
+        name: $NAMESPACE
+EOF
 
 # Add the helm repository.
 helm repo add jetstack https://charts.jetstack.io
 
 # Install the chart if needed.
-helm list --namespace kube-system | grep $SERVICE > /dev/null
+helm list --namespace $NAMESPACE | grep $SERVICE > /dev/null
 if [ $? != 0 ]; then
-    helm install $SERVICE jetstack/cert-manager --version v0.13.0 --namespace kube-system
+    helm install $SERVICE jetstack/cert-manager --version v0.13.0 --namespace $NAMESPACE --set webhook.enabled=false
     echo "Helm chart installed: $SERVICE"
 else
     echo "Helm chart exists: $SERVICE"
 fi
 
-echo "Waiting 10 seconds for resources to spin up. Adjust as needed."
-sleep 10
+echo "Waiting 30 seconds for resources to spin up. Adjust as needed."
+sleep 30
 
 cat <<EOF > yaml/certificate-issuer.yaml
 apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
 metadata:
   name: letsencrypt-development-issuer
-  namespace: $NAMESPACE
+  namespace: cert-manager
 spec:
   acme:
     # The ACME server URL
@@ -86,7 +82,7 @@ apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
 metadata:
   name: letsencrypt-production-issuer
-  namespace: $NAMESPACE
+  namespace: cert-manager
 spec:
   acme:
     # The ACME server URL

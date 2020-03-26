@@ -1,5 +1,15 @@
 # Introduction To Pod Security Policy
 
+* https://docs.bitnami.com/kubernetes/how-to/secure-kubernetes-cluster-psp/
+* https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+* https://theithollow.com/2019/11/19/kubernetes-pod-security-policies/
+* https://www.tremolosecurity.com/kubernetes-security-myths-debunked/
+* https://sysdig.com/blog/kubernetes-security-psp-network-policy/
+* https://www.cncf.io/blog/2019/01/14/9-kubernetes-security-best-practices-everyone-must-follow/
+* https://falco.org/docs/psp_support/
+* https://cloud.google.com/kubernetes-engine/docs/how-to/hardening-your-cluster
+* https://blog.appsecco.com/prevent-hostpath-based-kubernetes-attacks-with-pod-security-policies-2f8646df6761
+
 ## NOTE
 
 * Create a (user) service account to start a pod to compare with the admin role.
