@@ -67,3 +67,9 @@ pip install wheel
 ```bash
 pip install python-env
 ```
+
+* Install `kubernetes` to interact with k8s clusters.
+
+```bash
+pip install kubernetes
+```

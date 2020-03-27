@@ -28,7 +28,7 @@ source ./cluster-create.sh -f $CONFIG_FILE
 ./namespace-create.sh $NAMESPACE
 # pause until the dig answer shows AWS information.
 
-./cert-manager-install.sh -f $CONFIG_FILE $NAMESPACE
+./cert-manager-install.sh -f $CONFIG_FILE
 
 ./istio-install.sh -f $CONFIG_FILE $NAMESPACE
 

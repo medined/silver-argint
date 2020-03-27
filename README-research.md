@@ -9,13 +9,26 @@ pod/cert-manager-webhook-84954f5587-4k8jg condition met
 Error from server (InternalError): error when creating "yaml/certificate-issuer.yaml": Internal error occurred: failed calling webhook "
 webhook.cert-manager.io": Post https://cert-manager-webhook.kube-system.svc:443/mutate?timeout=30s: context deadline exceeded
 
+
+kubectl config set-context --current --namespace=$NAMESPACE
+
+kubectl config set-context --current --namespace=cert-manager
+
 kubectl get apiservice
 
 pushd /tmp
 curl -L -o sonobuoy.tgz https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.17.2/sonobuoy_0.17.2_linux_amd64.tar.gz
 tar xf sonobuoy.tgz
+# cp to $HOME/bin
 popd
+sonobuoy run --mode=quick --wait
 
+sonobuoy run --mode=certified-conformance 
+sonobuoy status
+RESULTS=$(sonobuoy retrieve)
+sonobuoy results $RESULTS
+sonobuoy delete --wait
+# wait for the namespace to delete.
 
 As interesting topics are explored, turn them into documents or scripts.
 
