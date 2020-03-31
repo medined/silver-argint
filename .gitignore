@@ -6,3 +6,6 @@ yaml
 log
 adobo
 .idea
+go
+ansible
+*.tar.gz

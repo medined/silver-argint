@@ -1,3 +1,22 @@
+# Scratch Space
+
+SECRET=$(head -c 32 /dev/urandom | base64)
+
+kubectl apply -f - <<EOF
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources:
+    - secrets
+    providers:
+    - aescbc:
+        keys:
+        - name: key1
+          secret: $SECRET
+    - identity: {}
+EOF
+
+
 # Research Topics
 
 $ kubectl wait --for=condition=Available deployment/cert-manager-webhook -n cert-manager
@@ -16,19 +35,9 @@ kubectl config set-context --current --namespace=cert-manager
 
 kubectl get apiservice
 
-pushd /tmp
-curl -L -o sonobuoy.tgz https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.17.2/sonobuoy_0.17.2_linux_amd64.tar.gz
-tar xf sonobuoy.tgz
-# cp to $HOME/bin
-popd
-sonobuoy run --mode=quick --wait
+https://github.com/Soluto/kamus 
 
-sonobuoy run --mode=certified-conformance 
-sonobuoy status
-RESULTS=$(sonobuoy retrieve)
-sonobuoy results $RESULTS
-sonobuoy delete --wait
-# wait for the namespace to delete.
+ https://www.cloudjourney.io/
 
 As interesting topics are explored, turn them into documents or scripts.
 
