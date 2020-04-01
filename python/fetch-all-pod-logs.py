@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-"""
-Creates a sub-domain in Route53. For example, qwerty.va-oit.cloud.
-"""
-
 from kubernetes.client.rest import ApiException
 from kubernetes import client, config
 

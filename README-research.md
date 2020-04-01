@@ -16,8 +16,21 @@ resources:
     - identity: {}
 EOF
 
+# Create a user
+
+* https://sysdig.com/blog/kubernetes-security-rbac-tls/
+
+# Network Policy
+
+* https://sysdig.com/blog/kubernetes-security-psp-network-policy/
 
 # Research Topics
+
+* https://www.infoq.com/presentations/supply-grafeas-kritis/
+
+
+* https://sysdig.com/blog/kubernetes-security-kubelet-etcd/
+* https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/
 
 $ kubectl wait --for=condition=Available deployment/cert-manager-webhook -n cert-manager
 deployment.extensions/cert-manager-webhook condition met
@@ -41,7 +54,6 @@ https://github.com/Soluto/kamus
 
 As interesting topics are explored, turn them into documents or scripts.
 
-* https://www.jeffgeerling.com/blog/2020/kubernetes-collection-ansible
 * https://github.com/ansible/community/wiki/Kubernetes
 * https://medium.com/faun/deploying-and-scaling-jenkins-on-kubernetes-2cd4164720bd
 * https://bitnami.com/stack/jenkins/helm
@@ -143,12 +155,19 @@ AMI_ID=`curl -s https://coreos.com/dist/aws/aws-stable.json | jq -r '.["us-east-
 
 ## Research
 
-* https://medium.com/faun/how-to-setup-a-perfect-kubernetes-cluster-using-kops-in-aws-b616bdfae013 - cluster with 3 master nodes and 2 worker nodes with 1 AWS On-demand instance and 1 AWS Spot instance within a private topology with multi-availability zones deployment.
+* https://medium.com/faun/how-to-setup-a-perfect-kubernetes-cluster-using-kops-in-aws-b616bdfae013 - cluster with 3 master nodes and 2 worker nodes with 1 AWS On-demand instance and 1 AWS Spot instance within a private topology with multi-availability zones deployment. How to SSH into master and nodes.
+
 * https://garden.io/ - garden automates the repetitive parts of your workflow to make developing for Kubernetes and cloud faster and easier.
-* https://okteto.com/ - Development platform for Kubernetes applications. Build better applications by developing and testing your code directly in Kubernetes.
+
+* https://okteto.com/ - Development platform for Kubernetes applications. Build better applications by 
+developing and testing your code directly in Kubernetes.
+
 * https://blog.alexellis.io/a-bit-of-istio-before-tea-time/ - Istio demo up and running with a public IP directly to your laptop.
+
 * https://www.youtube.com/watch?v=8JbGfNNG1mQ - kubernetes team live stream
+
 * https://github.com/kubernetes-sigs/kubespray - Deploy a Production Ready Kubernetes Cluster
+
 * https://kind.sigs.k8s.io/ - running local Kubernetes clusters using Docker container “nodes”.
 
 On Mon, Mar 9, 2020 at 8:21 PM David Medinets <david.medinets@gmail.com> wrote:
@@ -157,18 +176,22 @@ On Mon, Mar 9, 2020 at 8:21 PM David Medinets <david.medinets@gmail.com> wrote:
   * https://www.abhaybhargav.com/stories-of-my-experiments-with-distroless-containers/
 
 https://aws.amazon.com/compliance/services-in-scope/
-https://turbot.com/
-https://www.telerik.com/teststudio
+
 https://www.mitre.org/publications/project-stories/synthetic-patient-records-help-deliver-real-health-outcomes
+
 https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-190.pdf
+
 https://www.gao.gov/assets/710/702642.pdf
+
 http://trm.oit.va.gov/ToolRequestPage.aspx?treqid=52855
+
 https://vaww.vashare.oit.va.gov/sites/OneVaEa/DevOps/Shared%20Documents/Technical%20Architecture%20References/Selecting%20the%20Optimal%20Technical%20Architecture%20for%20Data%20Ingestion.pdf
 
 ### Kubernetes
 
 * https://operatorhub.io/
-* https://cluster-api.sigs.k8s.io/
+
+* https://cluster-api.sigs.k8s.io/ - The Cluster API is a Kubernetes project to bring declarative, Kubernetes-style APIs to cluster creation, configuration, and management. It provides optional, additive functionality on top of core Kubernetes to manage the lifecycle of a Kubernetes cluster.
 
 
 Shared and Federated Promethus Servers - 683 views - 1 year ago
@@ -196,13 +219,12 @@ anti-affinity deployment - preferredDuringSchedulingIgnoredDuringExecution
 aws encryption provider - kms at rest. - removes encryption from applicatio control - hard to make mistake - can't make configuration error to expose credentials.
 
 https://github.com/kubernetes-sigs/kube-batch - A batch scheduler of kubernetes for high performance workload.
+
 https://github.com/PaddlePaddle/cloud - PaddlePaddle Cloud is a combination of PaddlePaddle and Kubernetes. It supports fault-recoverable and fault-tolerant large-scaled distributed deep learning.
 
-https://github.com/datawire/kubernaut
+https://github.com/datawire/kubernaut - instant ephemeral Kubernetes clusters for development and testing
 
-https://github.com/grafeas/kritis - Deploy-time Policy Enforcer for Kubernetes applications. Binary Authorization allows stakeholders to ensure that deployed software artifacts have been prepared according to organization’s standards.
-
-https://www.datawire.io/
+https://www.datawire.io/ - telepresence, ambassador
 
 LOCAL DEVELOPING
 https://www.telepresence.io/ - FAST, LOCAL DEVELOPMENT FOR KUBERNETES AND OPENSHIFT MICROSERVICES
@@ -213,6 +235,7 @@ https://argoproj.github.io/argo-cd/
 https://grafeas.io/ - An open artifact metadata API to audit and govern your software supply chain
 
 https://kubesec.io/ - Security risk analysis for Kubernetes resources
+
 https://github.com/IBM/portieris - A Kubernetes Admission Controller for verifying image trust with Notary.
 
 https://docs.fluxcd.io/en/1.18.0/ - https://github.com/bricef/gitops-tutorial - Flux is a tool that automates the deployment of containers to Kubernetes. It fills the automation void that exists between building and monitoring.
@@ -221,42 +244,65 @@ https://github.com/kubernetes-sigs/kube-batchhttps://www.cisecurity.org/cis-benc
 
 https://github.com/kubernetes/test-infra/tree/master/prow/cmd/peribolos - Peribolos allows the org settings, teams and memberships to be declared in a yaml file. GitHub is then updated to match the declared configuration.
 
-https://github.com/kubernetes/test-infra/tree/master/prow - Prow is a Kubernetes based CI/CD system. Jobs can be triggered by various types of events and report their status to many different 
-services. In addition to job execution, Prow provides GitHub automation in the form of policy enforcement, chat-ops via /foo style commands, and automatic PR merging.
+https://github.com/kubernetes/test-infra/tree/master/prow - Prow is a Kubernetes based CI/CD system. Jobs can be triggered by various types of events and report their status to many different services. In addition to job execution, Prow provides GitHub automation in the form of policy enforcement, chat-ops via /foo style commands, and automatic PR merging.
 
 https://github.com/Comcast/kuberhealthy - An operator for synthetic monitoring on Kubernetes. Write your own tests in your own container and Kuberhealthy will manage everything else.
 
 https://gitkube.sh/ - https://www.youtube.com/watch?v=gDGT4Gf_4JM - developers use pre-commit hook to deploy.
+
 https://kubeapps.com/
+
 https://github.com/dexidp/dex - OpenID Connect - use Google, GitHub, etc to login into Kubernetes cluster?
 Add "Open Policy Agent" to pipeline which requires resource limits. Or as a github push check.
+
 Example of ElasticSearch & Kibana.
+
 WordPress, Joomla
+
 use git hash for image version number for automation. Not sequential.
+
 Security - internet-facing cluster and internal-facing cluster - to isolate CVE, limit breach fallout.
+
 anonymouse-auth=false - disable for api server
+
 load balancer reduces attack service since it is an AWS resource instead of code running on an EC2 cluster. This is more secure.
-pop security policies (PSP)
+
 audit logs of api server - who did what and when - audit policy
+
 patroni - HA daemon
+
 passing information into container using configmap - https://www.youtube.com/watch?v=E8uGIeiaaUQ - common configmap across resources
+
 https://github.com/kubernetes-sigs/bootkube - self-hosted k8s
+
 csysdig - important debugging! - F2 to see views - from https://www.youtube.com/watch?v=agbBy1Aduew - good for article. integration with k8s.
 https://stackstorm.com/ - Robust Automation Engine - From simple if/then rules to complicated workflows, StackStorm lets you automate DevOps your way.
+
 ceph - what benefit?
+
 hystrix dashboard - different kinds of circuit breakers.
+
 turbine dashbaord - what is it?
+
 pachyderm.io - alternative to hadoop - open source, distributing processing framework
+
 http://www.chronix.io/ - A fast and efficient time series storage
+
 https://zipkin.io - Zipkin is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in service architectures. 
+
 https://github.com/grafana/loki - Loki is a horizontally-scalable, highly-available, multi-tenant log aggregation system inspired by Prometheus.
 Use Apache Ignite to do session synchronization - https://www.youtube.com/watch?v=yB6Zl8nqqqE - 29mins
+
 https://spiffe.io/ - https://www.youtube.com/watch?v=ikmxZdZRTio - Secure Production Identity Framework for Everyone - 
+
 https://github.com/square/ghostunnel - Ghostunnel is a simple TLS proxy with mutual authentication support for securing non-TLS backend applications.
 Request Enrichment
+
 https://www.solo.io/open-source/ - 
-https://squash.solo.io/ - https://www.youtube.com/watch?v=5TrV3qzXlgI - microservice debugging in k8s.
+    https://squash.solo.io/ - https://www.youtube.com/watch?v=5TrV3qzXlgI - microservice debugging in k8s.
+
 https://kubeval.instrumenta.dev/ - Kubeval is used to validate one or more Kubernetes configuration files, and is often used locally as part of a development workflow as well as in CI pipelines.
+
 https://github.com/vapor-ware/kubetest - https://kubetest.readthedocs.io/en/latest/ - run tests (assertions) against configuration files.
 
 https://projectcontour.io/ - Contour is an open source Kubernetes ingress controller providing the control plane for the Envoy edge and service proxy. Contour supports dynamic configuration updates and multi-team ingress delegation out of the box while maintaining a lightweight profile.
@@ -273,11 +319,10 @@ Kubernetes/Ingress-Nginx is based on Nginxinc/Kubernetes-Ingress
 SECURE PODS
 https://www.youtube.com/watch?v=GLwmJh-j3rs = 6:00 - seccomp and apparmor annotations.
 gVisor - emulated kernal - from google
-kata containers - run in any k8s
-ls /var/run/secrets/kubernetes.io/serviceaccount - using the default mounted ServiceAccount token?
 
-https://www.youtube.com/watch?v=qs48vF36R-8
-  3:20m - PodSecurityPolicy yaml
+kata containers - run in any k8s
+
+ls /var/run/secrets/kubernetes.io/serviceaccount - using the default mounted ServiceAccount token?
 
 https://github.com/jelmersnoeck/barbossa - last change nearly two years ago. Kubernetes Chief Mate - Ensure the Safety and Security of your Applications.
 
@@ -286,7 +331,7 @@ https://min.io/ - S3-compatible object storage in k8s.
 https://rook.io/ - https://www.youtube.com/watch?v=6p0GKjrYzg4 - https://www.youtube.com/watch?v=To1ldyb_9NA - Rook storage for kubernetes - Rook turns distributed storage systems into self-managing, self-scaling, self-healing storage services. It automates the tasks of a storage administrator: deployment, bootstrapping, configuration, provisioning, scaling, upgrading, migration, disaster recovery, monitoring, and resource management.
 
 data-dog/godog - enables english in user stories
-openebs/litmus - bridge between users and kubernetes
+https://github.com/litmuschaos/litmus - chaos monkey
 
 HIPPA Compliance
 https://containerjournal.com/topics/container-security/best-practices-for-hipaa-compliance-in-a-containerized-environment/
@@ -331,7 +376,6 @@ https://vitess.io/ - massively scalable MySQL.
     * https://troubleshoot.sh/ - Deliver More Reliable and Predictable Kubernetes Applications
     * https://www.serverlab.ca/tutorials/development/nodejs/containerizing-a-node-js-rest-api-for-kubernetes/ - how to handle backend secrets.
     * https://kubecloud.com - the true learn-by-doing platform.
-    * https://www.youtube.com/watch?v=80Ew_fsV4rM - Kubernetes Ingress Tutorial for Beginners | simply explained
     * https://github.com/slipway-gitops/slipway - GitOps by Commit Hash
     * https://skaffold.dev - Skaffold handles the workflow for building, pushing and deploying your application, allowing you to focus on what matters most: writing code
         * https://caylent.com/kubernetes-development-in-real-time-with-skaffold

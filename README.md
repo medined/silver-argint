@@ -46,6 +46,7 @@ These articles are listed in the order in order you should read them. Later arti
         * [OWASP-ZAP](docs/intro-to-owasp-zap.md)
 * DistroLess
     * [Introduction To DistroLess](docs/intro-to-distrless.md)
+* [Troubleshooting](docs/troubleshooting.md)
 
 ## Research
 
