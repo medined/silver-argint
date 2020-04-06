@@ -11,13 +11,13 @@ There are several ways to create a Kubernetes cluster.
 
 This is a popular installer which is part of the Kubernetes project. It will handle doing the provisioning and software installation. Unfortunately, as of 2020-04-06, it does not support Fedora CoreOS. It does support CoreOS which is end-of-life.
 
-See the [Kops readme](kops/README.md).
+See the [Kops readme](installers/kops/README.md).
 
 ## Typhoon
 
 Typhoon is a minimal and free Kubernetes distribution. It was largely written by Dalton Hubble who worked on CoreOS for a couple of years before moving to Lyft.
 
-See the [Typhoon readme](typhoon/README.md).
+See the [Typhoon readme](installers/typhoon/README.md).
 
 ## Research
 
