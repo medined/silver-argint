@@ -18,10 +18,6 @@ resources:
 EOF
 ```
 
-# Rolling Change To SSH Key
-
-* https://github.com/kubernetes/kops/blob/master/docs/security.md
-
 # Create a user
 
 * https://sysdig.com/blog/kubernetes-security-rbac-tls/
@@ -88,7 +84,7 @@ As interesting topics are explored, turn them into documents or scripts.
 
 Container Attached Storage - CAS
 
-* https://kustomize.io/ - one yaml file to manage dev, test, and prod
+https://kustomize.io/ - one yaml file to manage dev, test, and prod
 
 connect jenkins to private registry  in k8s.
 
@@ -97,7 +93,6 @@ https://github.com/aquasecurity/kube-hunter - securtiy weaknesses
 
 https://github.com/grafana/cortex-jsonnet
 
-```
 source <(kubectl completion bash)
 
 export KUBE_EDITOR=`code --wait`
@@ -113,7 +108,6 @@ Log Levels
 -v=9 curl command
 -v=8 request and response body
 -v=6 method and apipath
-```
 
 #powerofkubectl
 
@@ -154,16 +148,10 @@ https://nvd.nist.gov/ncp/checklist/766
 API for stable CoreOS version 
 https://coreos.com/dist/aws/aws-stable.json
 
-```
-curl -s https://coreos.com/dist/aws/aws-stable.json | jq -r '.["us-east-1"].hvm'
-```
- will get the HVM AMI ID in us-east-1
+curl -s https://coreos.com/dist/aws/aws-stable.json | jq -r '.["us-east-1"].hvm' will get the HVM AMI ID in us-east-1
 or
-Similarly, setting an ENV VAR or in a shell script
-
-```
+Similarly, setting an ENV VAR or in a shell script 
 AMI_ID=`curl -s https://coreos.com/dist/aws/aws-stable.json | jq -r '.["us-east-1"].hvm’`
-```
 
 ## Notes
 

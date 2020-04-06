@@ -154,12 +154,6 @@ DOMAIN_NAME_SAFE=$(echo $DOMAIN_NAME | tr [:upper:] [:lower:] | tr '.' '-')
 DOMAIN_NAME_S3="s3://$DOMAIN_NAME_SAFE-$(echo -n $DOMAIN_NAME | sha256sum | cut -b-10)"
 KOPS_STATE_STORE="s3://$DOMAIN_NAME_SAFE-$(echo -n $DOMAIN_NAME | sha256sum | cut -b-10)-kops"
 
-KEY_PAIR_NAME="$DOMAIN_NAME_SAFE-k8s"
-LOCAL_PEM_FILE="$TEMPDIR/$KEY_PAIR_NAME.pem"
-LOCAL_PUB_FILE="$TEMPDIR/$KEY_PAIR_NAME.pub"
-
-S3_PEM_FILE="$DOMAIN_NAME_S3/$KEY_PAIR_NAME.pem"
-
 # Does the S3 bucket exist for random storage?
 aws s3 ls $DOMAIN_NAME_S3 >/dev/null 2>&1
 if [ $? == 0 ]; then
@@ -178,6 +172,16 @@ else
     echo "s3 kops state store: Created - $KOPS_STATE_STORE"
 fi
 
+
+KEY_PAIR_NAME="$DOMAIN_NAME_SAFE-k8s"
+LOCAL_PEM_FILE="$TEMPDIR/$KEY_PAIR_NAME.pem"
+LOCAL_PUB_FILE="$TEMPDIR/$KEY_PAIR_NAME.pub"
+
+S3_PEM_FILE="$DOMAIN_NAME_S3/$KEY_PAIR_NAME.pem"
+
+echo "LOCAL_PEM_FILE: $LOCAL_PEM_FILE"
+echo "LOCAL_PUB_FILE: $LOCAL_PUB_FILE"
+echo "S3_PEM_FILE: $S3_PEM_FILE"
 
 aws ec2 describe-key-pairs --region us-east-1 --key-names $KEY_PAIR_NAME 1>/dev/null 2>&1
 if [ $? != 0 ]; then
@@ -221,9 +225,17 @@ else
 fi
 
 # make sure the pki files have the right permissions.
-chmod 600 $LOCAL_PEM_FILE $LOCAL_PUB_FILE
+chmod 600 $LOCAL_PUB_FILE
 
-COREOS_AMI=$(curl -s https://coreos.com/dist/aws/aws-stable.json | $HOME/bin/jq -r '.["us-east-1"].hvm')
+# CoreOS is being replaced by Fedora CoreOS. The code below gets the latest
+# AMI but it does not work seamlessly with kops.
+#
+# Research about why needs to be done.
+#
+# JSON_URL="https://builds.coreos.fedoraproject.org/streams/stable.json"
+# AMI=$(curl -s $JSON_URL | $HOME/bin/jq -r '.architectures.x86_64.images.aws.regions["us-east-1"].image')
+
+AMI=$(curl -s https://coreos.com/dist/aws/aws-stable.json | $HOME/bin/jq -r '.["us-east-1"].hvm')
 
 echo "kubernetes cluster: Creating"
 
@@ -235,7 +247,7 @@ if [ -z $VPC_ID ]; then
   # VPC was not specified.
   $HOME/bin/kops create cluster \
     --cloud=aws \
-    --image=$COREOS_AMI \
+    --image=$AMI \
     --master-zones="$MASTER_ZONES" \
     --name=$DOMAIN_NAME \
     --node-count=$NODE_COUNT \
@@ -246,7 +258,7 @@ else
   # VPC was specified.
   $HOME/bin/kops create cluster \
     --cloud=aws \
-    --image=$COREOS_AMI \
+    --image=$AMI \
     --master-zones="$MASTER_ZONES" \
     --name=$DOMAIN_NAME \
     --node-count=$NODE_COUNT \
@@ -256,6 +268,23 @@ else
     --zones="$AWS_ZONES" \
     --yes
 fi
+
+echo 
+if [ -z $VPC_ID ]; then
+  echo "Creating New VPC."
+else
+  echo "Using Existing VPC."
+fi
+
+echo "AWS_ZONES: $AWS_ZONES"
+echo "AMI: $AMI"
+echo "DOMAIN_NAME: $DOMAIN_NAME"
+echo "LOCAL_PUB_FILE (ssh-public-key): $LOCAL_PUB_FILE"
+echo "MASTER_ZONES: $MASTER_ZONES"
+echo "NODE_COUNT: $NODE_COUNT"
+echo "SUBNET_IDS: $SUBNET_IDS"
+echo "VPC_ID: $VPC_ID"
+echo
 
 echo "The cluster is being created. Use the following commands to determine the status."
 echo

@@ -98,13 +98,19 @@ module "tempest" {
   worker_count = 2
   worker_type  = "t3.small"
 }
+
+# Obtain cluster kubeconfig
+resource "local_file" "kubeconfig-tempest" {
+  content  = module.tempest.kubeconfig-admin
+  filename = "$HOME/.kube/configs/tempest-config"
+}
 EOF
 ```
 
 * Initial bootstrapping requires bootstrap.service be started on one controller node. Terraform uses ssh-agent to automate this step. Add your SSH private key to ssh-agent.
 
 ```bash
-ssh-add /tmp/david-va-oit-cloud-k8s.pub
+ssh-add /tmp/david-va-oit-cloud-k8s.pem
 ssh-add -L
 ```
 
@@ -126,8 +132,14 @@ terraform plan
 terraform apply
 ```
 
-ERROR: module.tempest.null_resource.copy-controller-secrets[0]: Still creating... [8m40s elapsed]
+* Export `KUBECONFIG` so that `kubectl` knows how to connect.
 
+```
+export KUBECONFIG=$HOME/.kube/configs/tempest-config
+```
 
-https://github.com/coreos/tectonic-installer/issues/2310
+* View pods.
 
+```
+kubectl get pods --all-namespaces
+```
