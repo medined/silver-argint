@@ -49,6 +49,27 @@ passwd:
     - name: core
       ssh_authorized_keys:
         - $PKI_PUBLIC_KEY
+
+systemd:
+  units:
+    - name: healthz.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=A healthz unit!
+        After=network-online.target
+        Wants=network-online.target
+        [Service]
+        Type=forking
+        KillMode=none
+        Restart=on-failure
+        RemainAfterExit=yes
+        ExecStartPre=podman pull medined/simple-nodejs:0.0.2
+        ExecStart=podman run -d --name healthz-server -p 10254:10254 medined/simple-nodejs:0.0.2
+        ExecStop=podman stop -t 10 healthz-server
+        ExecStopPost=podman rm healthz-server
+        [Install]
+        WantedBy=multi-user.target
 EOF
 
 docker pull quay.io/coreos/fcct:release

@@ -1,0 +1,28 @@
+variant: fcos
+version: 1.0.0
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCM1j8+LRV9elXX2gcrEWh5HdRfZH5HxzMiFxtAqCgia6A1GllacLrv/CUwj3jocugCagl3u9aDVKQIoqDZ1JtFQ+itcH+6zQqx8sVLOu7Si40PpHSGlXjqJaUaNkFW7yU7vcW4TsBp/J6pzsXq9bbt2tB4bQVrPo3VjrsPcvVVda7s2M+Cv2b0I9zuvrbvUgzOMOnQWKNsBPuNoX4R61dKS/tk73JYBIUlRqqEJcHxTkdwFyKVZ3mssJRYYC5UipSVDoW7A5B0nXvlJo3zO3rp2Dl/pbWsvhb39dOiRh2thscHJotVzV4IJ4QHkvQ5UPwQau/OWi3AJwKU5B3k+Jwt
+
+systemd:
+  units:
+    - name: healthz.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=A healthz unit!
+        After=network-online.target
+        Wants=network-online.target
+        [Service]
+        Type=forking
+        KillMode=none
+        Restart=on-failure
+        RemainAfterExit=yes
+        ExecStartPre=podman pull medined/simple-nodejs:0.0.2
+        ExecStart=podman run -d --name healthz-server -p 10254:10254 medined/simple-nodejs:0.0.2
+        ExecStop=podman stop -t 10 healthz-server
+        ExecStopPost=podman rm healthz-server
+        [Install]
+        WantedBy=multi-user.target

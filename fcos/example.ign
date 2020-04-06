@@ -1,0 +1,35 @@
+{
+  "ignition": {
+    "config": {
+      "replace": {
+        "source": null,
+        "verification": {}
+      }
+    },
+    "security": {
+      "tls": {}
+    },
+    "timeouts": {},
+    "version": "3.0.0"
+  },
+  "passwd": {
+    "users": [
+      {
+        "name": "core",
+        "sshAuthorizedKeys": [
+          "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCM1j8+LRV9elXX2gcrEWh5HdRfZH5HxzMiFxtAqCgia6A1GllacLrv/CUwj3jocugCagl3u9aDVKQIoqDZ1JtFQ+itcH+6zQqx8sVLOu7Si40PpHSGlXjqJaUaNkFW7yU7vcW4TsBp/J6pzsXq9bbt2tB4bQVrPo3VjrsPcvVVda7s2M+Cv2b0I9zuvrbvUgzOMOnQWKNsBPuNoX4R61dKS/tk73JYBIUlRqqEJcHxTkdwFyKVZ3mssJRYYC5UipSVDoW7A5B0nXvlJo3zO3rp2Dl/pbWsvhb39dOiRh2thscHJotVzV4IJ4QHkvQ5UPwQau/OWi3AJwKU5B3k+Jwt"
+        ]
+      }
+    ]
+  },
+  "storage": {},
+  "systemd": {
+    "units": [
+      {
+        "contents": "[Unit]\nDescription=A healthz unit!\nAfter=network-online.target\nWants=network-online.target\n[Service]\nType=forking\nKillMode=none\nRestart=on-failure\nRemainAfterExit=yes\nExecStartPre=podman pull medined/simple-nodejs:0.0.2\nExecStart=podman run -d --name healthz-server -p 10254:10254 medined/simple-nodejs:0.0.2\nExecStop=podman stop -t 10 healthz-server\nExecStopPost=podman rm healthz-server\n[Install]\nWantedBy=multi-user.target\n",
+        "enabled": true,
+        "name": "healthz.service"
+      }
+    ]
+  }
+}

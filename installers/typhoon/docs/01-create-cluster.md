@@ -1,26 +1,8 @@
-# Introduction To Typhoon
-
-## Description
-
-Typhoon is a minimal and free Kubernetes distribution.
-
-* Minimal, stable base Kubernetes distribution
-* Declarative infrastructure and configuration
-* Free (freedom and cost) and privacy-respecting
-* Practical for labs, datacenters, and clouds
-
-Typhoon distributes upstream Kubernetes, architectural conventions, and cluster addons, much like a GNU/Linux distribution provides the Linux kernel and userspace components.
-
-## Links
-
-* https://typhoon.psdn.io/
-* https://typhoon.psdn.io/fedora-coreos/aws/
-
-## Process
+# Create Cluster
 
 * Install `terraform` using https://www.terraform.io/downloads.html as a guide or using any packaging method.
 
-* Add the terraform-provider-ct plugin binary for your system to ~/.terraform.d/plugins/, noting the final name.
+* Add the `terraform-provider-ct` plugin binary.
 
 ```bash
 mkdir -p ~/.terraform.d/plugins
@@ -33,7 +15,7 @@ rm -rf terraform-provider-ct-v0.5.0-linux-amd64.tar.gz terraform-provider-ct-v0.
 * Connect to your `typhoon` directory.
 
 ```bash
-cd typhoon
+cd installers/typhoon
 ```
 
 * Ignore `terraform` state files.
@@ -45,13 +27,6 @@ cat <<EOF > .gitignore
 *.tfstate.backup
 .terraform/
 EOF
-```
-
-* [MAYBE NOT] Create an infrastructure directory. And connect into it.
-
-```
-mkdir -p infra
-cd infra
 ```
 
 * Make sure that you have `AWS_PROFILE` and `AWS_REGION` defined. And that you have run `aws configure` in order to set the secret key values.
