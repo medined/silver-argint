@@ -104,6 +104,9 @@ EOF
 # sudo rpm-ostree override replace https://copr-be.cloud.fedoraproject.org/results/jasonbrooks/containernetworking-cni/fedora-29-x86_64/00861706-containernetworking-plugins/containernetworking-plugins-0.7.4-1.fc29.x86_64.rpm
 
 # This command failed.
+sudo rpm-ostree upgrade
+sudo rpm-ostree install kubeadm
+
 sudo rpm-ostree install cri-o kubelet kubectl kubeadm -r
 
 ```

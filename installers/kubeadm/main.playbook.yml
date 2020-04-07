@@ -1,0 +1,19 @@
+---
+- hosts: fcos
+  gather_facts: false
+
+  vars:
+    ansible_python_interpreter: '/usr/bin/python3'
+
+  tasks:
+
+  - name: Copy install script to remote server.
+    become: yes
+    copy:
+      src: kubeadm-installer.sh
+      dest: /usr/local/bin/kubeadm-installer.sh
+      mode: u=rx,g=rx,o-rwx
+
+  - name: Run software installer script.
+    become: yes
+    command: /usr/local/bin/kubeadm-installer.sh

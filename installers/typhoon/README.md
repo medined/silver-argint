@@ -2,6 +2,12 @@
 
 NOTE: The document, and others in Typhoon installer directory, assume that you have knowledge from the Kops installer directory.
 
+## Failure
+
+The Target Group health check is not working. I tried to add a health check service to the worker.yaml typhoon file which does start up and respond to locahost:10254/healthz but the service is not responding outside of the instance. I don't know why.
+
+Not now, Typhoon is not an option.
+
 ## Description
 
 Typhoon is a minimal and free Kubernetes distribution.
