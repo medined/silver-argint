@@ -103,3 +103,31 @@ popd
 ./jenkins-helm-install.sh -f $CONFIG_FILE $NAMESPACE
 ./jenkins-helm-check.sh $NAMESPACE
 ./jenkins-proxy-start.sh $NAMESPACE
+
+
+
+curl -o $HOME/bin/stern -L https://github.com/wercker/stern/releases/download/1.11.0/stern_linux_amd64
+chmod +x $HOME/bin/stern
+
+
+ps auxwww
+
+
+How To Make Your Worker Nodes Pass Target Group Healh Check
+
+* SSH to each worker node.
+    * Switch to super user.
+    * In /etc/systemd/system/kubelet.service:
+        * Change the `--healthz-port` to 10248.
+        * Add `--healthz-bind-address 0.0.0.0`.
+        * Run `systemctl daemon-reload`.
+        * Run `systemctl restart kubelet`.
+    * Use `/usr/bin/netstat -plant | grep -i kubelet | grep LISTEN | grep 10248` to check the result.
+
+tcp6       0      0 :::10248                :::*                    LISTEN      144658/kubelet      
+
+    * `exit` twice.
+* In the AWS console, change the `tempest-workers-http` and `tempest-workers-https` target groups.
+    * Change the health check port to 10248.
+* In the AWS console, change the `tempest-worker` security group.
+    * Add a rule to allow traffic on 10248.

@@ -7,13 +7,45 @@
 
   tasks:
 
-  - name: Copy install script to remote server.
-    become: yes
-    copy:
-      src: kubeadm-installer.sh
-      dest: /usr/local/bin/kubeadm-installer.sh
-      mode: u=rx,g=rx,o-rwx
+  # Set KUBECONFIG to this file to access cluster via kubectl.
+  # - name: copy tempest kube configuration file.
+  #   copy:
+  #     src: /home/medined/.kube/configs/tempest-config
+  #     dest: tempest-config
 
-  - name: Run software installer script.
+  # - name: Copy install script to remote server.
+  #   become: yes
+  #   copy:
+  #     src: kubeadm-installer.sh
+  #     dest: /usr/local/bin/kubeadm-installer.sh
+  #     mode: u=rx,g=rx,o-rwx
+
+  # - name: Run software installer script.
+  #   become: yes
+  #   command: /usr/local/bin/kubeadm-installer.sh
+
+  # - name: Create bash configuration for kubernetes
+  #   become: yes
+  #   copy:
+  #     dest: /etc/profile.d/k8s-config.sh
+  #     content: |
+  #       export PATH=$PATH:/opt/bin:/opt/cni/bin
+
+  # - name: Create script to watch audit denial messages
+  #   become: yes
+  #   copy:
+  #     dest: /root/watch-audit-denial-messages.sh
+  #     content: |
+  #       tail -f /var/log/audit/audit.log | grep denied
+  #     mode: u=rx,g=rx,o=rx
+
+  - name: Get local hostname.
+    uri:
+      url: http://169.254.169.254/latest/meta-data/local-hostname
+      return_content: yes
+    register: localhostname
+
+  - name: Set local hostname. Use hostnamectl to confirm static hostname.
     become: yes
-    command: /usr/local/bin/kubeadm-installer.sh
+    hostname:
+      name: "{{localhostname.content}}"

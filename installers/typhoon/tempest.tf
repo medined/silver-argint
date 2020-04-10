@@ -8,8 +8,9 @@ output "ssh_authorized_key" {
 }
 
 module "tempest" {
-  #source = "git::https://github.com/poseidon/typhoon//aws/fedora-coreos/kubernetes?ref=v1.18.0"
-  source = "../../../typhoon/aws/fedora-coreos/kubernetes"
+  # using the original project.
+  source = "git::https://github.com/poseidon/typhoon//aws/fedora-coreos/kubernetes?ref=v1.18.0"
+  #source = "../../../poseidon-typhoon/aws/fedora-coreos/kubernetes"  # use git checkout tags/v1.18.0
 
   # AWS
   cluster_name = "tempest"

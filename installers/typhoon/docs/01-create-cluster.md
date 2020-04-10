@@ -12,7 +12,7 @@ mv terraform-provider-ct-v0.5.0-linux-amd64/terraform-provider-ct ~/.terraform.d
 rm -rf terraform-provider-ct-v0.5.0-linux-amd64.tar.gz terraform-provider-ct-v0.5.0-linux-amd64
 ```
 
-* Connect to your `typhoon` directory.
+* Connect to your `installers/typhoon` directory.
 
 ```bash
 cd installers/typhoon
@@ -55,7 +55,7 @@ EOF
 * Create a `tempest.tf` file.
 
 ```bash
-PKI_PUBLIC_KEY=$(cat /tmp/david-va-oit-cloud-k8s.pub)
+PKI_PUBLIC_KEY=$(cat /$HOME/.ssh/david-va-oit-cloud-k8s.pub)
 
 cat <<EOF > tempest.tf
 module "tempest" {
@@ -85,7 +85,7 @@ EOF
 * Initial bootstrapping requires bootstrap.service be started on one controller node. Terraform uses ssh-agent to automate this step. Add your SSH private key to ssh-agent.
 
 ```bash
-ssh-add /tmp/david-va-oit-cloud-k8s.pem
+ssh-add $HOME/.ssh/david-va-oit-cloud-k8s.pem
 ssh-add -L
 ```
 
@@ -118,3 +118,21 @@ export KUBECONFIG=$HOME/.kube/configs/tempest-config
 ```
 kubectl get pods --all-namespaces
 ```
+
+## Make Your Worker Nodes Pass Target Group Healh Check
+
+The following procedure seems to work. However, it might not be the best or even correct approach.
+
+* SSH to each worker node.
+    * Switch to super user.
+    * In /etc/systemd/system/kubelet.service:
+        * Change the `--healthz-port` to 10248.
+        * Add `--healthz-bind-address 0.0.0.0`.
+        * Run `systemctl daemon-reload`.
+        * Run `systemctl restart kubelet`.
+    * Use `/usr/bin/netstat -plant | grep -i kubelet | grep LISTEN | grep 10248` to check the result.
+    * `exit` twice.
+* In the AWS console, change the `tempest-workers-http` and `tempest-workers-https` target groups.
+    * Change the health check port to 10248.
+* In the AWS console, change the `tempest-worker` security group.
+    * Add a rule to allow traffic on 10248.
