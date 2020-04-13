@@ -12,9 +12,6 @@
 # apply over and over without ill effect.
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-rc5/aio/deploy/recommended.yaml
 
-echo "Waiting 5 seconds for processes to start."
-sleep 5
-
 # Create the admin-user service account.
 
 kubectl apply -f - <<EOF
@@ -42,6 +39,9 @@ subjects:
   namespace: kubernetes-dashboard
 EOF
 
+echo "Waiting 5 seconds for processes to start."
+sleep 5
+
 POD=$(kubectl get pods \
   --namespace kubernetes-dashboard \
   -l "k8s-app=kubernetes-dashboard" \
@@ -61,7 +61,7 @@ URL=http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:
 
 # Get a login bearer token.
 
-./get-login-token.sh
+./scripts/get-login-token.sh
 echo
 echo "Copy the login token to your clipboard."
 read -p "Press <ENTER> to continue."

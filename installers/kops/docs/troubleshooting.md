@@ -1,5 +1,9 @@
 # Troubleshooting
 
+## Server misbehaving
+
+I recieved this message when my internet connection was down. When the connection came back, the error went away.
+
 ## Machine X has not yet joined cluster
 
 Check the route table associated with the machine's subnet. Make sure that it has an Internet Gateway (IGW) in the target list.

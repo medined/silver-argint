@@ -13,8 +13,6 @@ Typhoon is a minimal and free Kubernetes distribution.
 
 Typhoon distributes upstream Kubernetes, architectural conventions, and cluster addons, much like a GNU/Linux distribution provides the Linux kernel and userspace components.
 
-After getting a cluster running, read [order of scripts](docs/00-order-of-scripts.md).
-
 ## Links
 
 * https://typhoon.psdn.io/
@@ -39,7 +37,7 @@ After getting a cluster running, read [order of scripts](docs/00-order-of-script
 * Install dashboard and start proxy in background. Or see [Deploy Dashboard](docs/02-deploy-dashboard.md)
 
 ```bash
-./dashboard-proxy-start.sh
+./scripts/dashboard-proxy-start.sh
 ```
 
 * Create a namespace.
@@ -61,17 +59,19 @@ EOF
 kubectl config set-context --current --namespace=$NAMESPACE
 ```
 
-* NOT WORKING! Install nginx-ingress.
+* [Deploy Ingress Controller](docs/03-deploy-ingress-controller.md)
+
+* See the resources just added. Only one `nginx-ingress-controller` is needed per cluster.
 
 ```bash
-pushd /tmp > /dev/null
-git clone https://github.com/poseidon/typhoon.git
-cd typhoon
-kubectl apply -R -f addons/nginx-ingress/aws
-popd
+kubectl get all --namespace ingress
 ```
 
-* [Deploy Cert Manager](docs/03-deploy-cert-manager.md)
+* Not used - [Deploy Cert Manager](docs/03-deploy-cert-manager.md)
+
+* [Deploy Service with HTTPS](docs/04-deploy-service-with-http.md)
+
+* [Add HTTPS To Service](docs/05-add-https-to-service.md)
 
 
 =================================================================
@@ -97,3 +97,14 @@ popd
 ./jenkins-helm-install.sh -f $CONFIG_FILE $NAMESPACE
 ./jenkins-helm-check.sh $NAMESPACE
 ./jenkins-proxy-start.sh $NAMESPACE
+<<<<<<< Updated upstream
+=======
+
+
+
+curl -o $HOME/bin/stern -L https://github.com/wercker/stern/releases/download/1.11.0/stern_linux_amd64
+chmod +x $HOME/bin/stern
+
+
+ps auxwww
+>>>>>>> Stashed changes
