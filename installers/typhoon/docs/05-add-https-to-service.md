@@ -1,6 +1,13 @@
 # Deploy Service With HTTPS
 
-* Create a namespace.
+* Deploy text-reponder with HTTP.
+
+```
+kubectl delete namespace text-responder
+./scripts/deploy-text-responder.sh
+```
+
+* Create a namespace for `cert-manager`.
 
 ```bash
 kubectl apply -f - <<EOF
@@ -72,7 +79,7 @@ kubectl delete namespace cert-manager-test
 
 * Create Let's Encrypt Issuer for a development and production environments. The main difference is the ACME server URL.
 
-```
+```bash
 kubectl apply -f - <<EOF
 apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
@@ -95,7 +102,7 @@ EOF
 * Check on the status of the development issuer. The entries should be ready.
 
 ```
-kubectl get issuer --namespace $NAMESPACE
+kubectl get issuer --namespace text-responder
 ```
 
 * Add annotation to text-responder ingress.
@@ -106,22 +113,30 @@ apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: text-responder-ingress
-  namespace: $NAMESPACE
+  namespace: text-responder
   annotations:
     kubernetes.io/ingress.class: public
+    kubernetes.io/tls-acme: "true"
     cert-manager.io/acme-challenge-type: http01
     cert-manager.io/issuer: letsencrypt-staging
 spec:
   tls:
   - hosts:
-    - $TEXT_RESPONDER_HOST
+    - text-responder.david.va-oit.cloud
     secretName: text-responder-tls
   rules:
-  - host: $TEXT_RESPONDER_HOST
+  - host: text-responder.david.va-oit.cloud
     http:
       paths:
       - backend:
           serviceName: text-responder
           servicePort: 80
+        path: "/text"
 EOF
 ```
+
+k -n text-responder describe certificate text-responder-tls
+
+k -n text-responder -o yaml get certificate text-responder-tls
+
+curl http://text-responder.david.va-oit.cloud/.well-known/acme-challenge/jz-p2oPwN0RtkRpczhDoIbzxmRDLgnc8pgUJYN5xjks

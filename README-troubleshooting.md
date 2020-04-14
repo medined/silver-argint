@@ -1,5 +1,19 @@
 # Troubleshooting
 
+## SSL Certificate Request Not Completing
+
+### Did Not Get Expected Response
+
+```
+E0414 03:28:58.803729 1 sync.go:184] cert-manager/controller/challenges 
+"msg"="propagation check failed" "error"="did not get expected response when 
+querying endpoint, expected \"jz-p2oPwN0RtkRpczhDoIbzxmRDLgnc8pgUJYN5xjks.9nYOupYS4HDX0r9ug3iojMZfg1Ec7rGpSviUlalcM7s\" 
+but got: silverargint\n" 
+"dnsName"="text-responder.david.va-oit.cloud" "resource_kind"="Challenge" 
+"resource_name"="text-responder-tls-3425851964-881250344-3109647009" 
+"resource_namespace"="text-responder" "type"="http-01"
+```
+
 ## Server misbehaving
 
 I recieved this message when my internet connection was down. When the connection came back, the error went away.
