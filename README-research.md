@@ -1,5 +1,6 @@
 # Scratch Space
 
+```
 SECRET=$(head -c 32 /dev/urandom | base64)
 
 kubectl apply -f - <<EOF
@@ -15,6 +16,52 @@ resources:
           secret: $SECRET
     - identity: {}
 EOF
+```
+
+# kuard
+
+Kubernetes Up And Running Demo
+
+Not Working. Gets 503 error. See ingress controller logs.
+
+```bash
+kubectl run --image=gcr.io/kuar-demo/kuard-amd64:1 kuard --replicas=2
+
+dig kuard.david.va-oit.cloud
+
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: kuard
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: kuard
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: kuard-ingress
+  annotations:
+    kubernetes.io/ingress.class: public
+spec:
+  rules:
+  - host: kuard.david.va-oit.cloud
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: kuard
+          servicePort: 80
+EOF
+```
+
+# Rolling Change To SSH Key
+
+* https://github.com/kubernetes/kops/blob/master/docs/security.md
 
 # Create a user
 
@@ -32,6 +79,7 @@ EOF
 * https://sysdig.com/blog/kubernetes-security-kubelet-etcd/
 * https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/
 
+```
 $ kubectl wait --for=condition=Available deployment/cert-manager-webhook -n cert-manager
 deployment.extensions/cert-manager-webhook condition met
 
@@ -47,6 +95,7 @@ kubectl config set-context --current --namespace=$NAMESPACE
 kubectl config set-context --current --namespace=cert-manager
 
 kubectl get apiservice
+```
 
 https://github.com/Soluto/kamus 
 
@@ -70,17 +119,17 @@ As interesting topics are explored, turn them into documents or scripts.
 
 * https://cloudowski.com/articles/why-vault-and-kubernetes-is-the-perfect-couple/
 
-https://www.youtube.com/channel/UCvqbFHwN-nwalWPjPUKpvTA/playlists - Cloud Native Cloud Formation
+* https://www.youtube.com/channel/UCvqbFHwN-nwalWPjPUKpvTA/playlists - Cloud Native Cloud Formation
 
-https://www.youtube.com/watch?v=90kZRyPcRZw - Kubernetes Deconstructed: Understanding Kubernetes by Breaking It Down
-https://www.youtube.com/watch?v=YjZ4AZ7hRM0 - How the Department of Defense Moved to Kubernetes and Istio
-https://www.youtube.com/watch?v=ZuIQurh_kDk - Kubernetes Design Principles: Understand the Why
+* https://www.youtube.com/watch?v=90kZRyPcRZw - Kubernetes Deconstructed: Understanding Kubernetes by Breaking It Down
+* https://www.youtube.com/watch?v=YjZ4AZ7hRM0 - How the Department of Defense Moved to Kubernetes and Istio
+* https://www.youtube.com/watch?v=ZuIQurh_kDk - Kubernetes Design Principles: Understand the Why
 
-https://bit.ly/k8sdoesk8s - che in kubernetes
+* https://bit.ly/k8sdoesk8s - che in kubernetes
 
 Container Attached Storage - CAS
 
-https://kustomize.io/ - one yaml file to manage dev, test, and prod
+* https://kustomize.io/ - one yaml file to manage dev, test, and prod
 
 connect jenkins to private registry  in k8s.
 
@@ -89,6 +138,7 @@ https://github.com/aquasecurity/kube-hunter - securtiy weaknesses
 
 https://github.com/grafana/cortex-jsonnet
 
+```
 source <(kubectl completion bash)
 
 export KUBE_EDITOR=`code --wait`
@@ -104,6 +154,7 @@ Log Levels
 -v=9 curl command
 -v=8 request and response body
 -v=6 method and apipath
+```
 
 #powerofkubectl
 
@@ -144,10 +195,16 @@ https://nvd.nist.gov/ncp/checklist/766
 API for stable CoreOS version 
 https://coreos.com/dist/aws/aws-stable.json
 
-curl -s https://coreos.com/dist/aws/aws-stable.json | jq -r '.["us-east-1"].hvm' will get the HVM AMI ID in us-east-1
+```
+curl -s https://coreos.com/dist/aws/aws-stable.json | jq -r '.["us-east-1"].hvm'
+```
+ will get the HVM AMI ID in us-east-1
 or
-Similarly, setting an ENV VAR or in a shell script 
+Similarly, setting an ENV VAR or in a shell script
+
+```
 AMI_ID=`curl -s https://coreos.com/dist/aws/aws-stable.json | jq -r '.["us-east-1"].hvm’`
+```
 
 ## Notes
 
@@ -172,8 +229,8 @@ developing and testing your code directly in Kubernetes.
 
 On Mon, Mar 9, 2020 at 8:21 PM David Medinets <david.medinets@gmail.com> wrote:
 * DistroLess
-  * https://github.com/GoogleContainerTools/distroless
-  * https://www.abhaybhargav.com/stories-of-my-experiments-with-distroless-containers/
+  * https://github.com/GoogleContainerTools/distroless
+  * https://www.abhaybhargav.com/stories-of-my-experiments-with-distroless-containers/
 
 https://aws.amazon.com/compliance/services-in-scope/
 
@@ -196,20 +253,20 @@ https://vaww.vashare.oit.va.gov/sites/OneVaEa/DevOps/Shared%20Documents/Technica
 
 Shared and Federated Promethus Servers - 683 views - 1 year ago
 
- 
+ 
 https://jenkins-x.io/docs/getting-started/
-  jx install for existing cluster.
-  private git repositories?
-  will this work with artifactory?
-  https://www.youtube.com/watch?v=uHe7R_iZSLU
+  jx install for existing cluster.
+  private git repositories?
+  will this work with artifactory?
+  https://www.youtube.com/watch?v=uHe7R_iZSLU
 
 https://github.com/solarhess/jenkins_kube_brains
-  - docker creates files in /var/lib/docker which is in a small volume on AWS instance? 9 minutes into video.
-  - corporate network and k8s share private address space (10.0, 172,16, 192.168). This cause a problem. 11:30 min
-  - test disk io - 15:30 min
-  - repeatable config - 16 min - backup job for JENKINS HOME - and restore job. Simply then writing groovy config jobs.
-  - prune docker resources hourly - 23 min
-  - have different size instance groups to lets job be sized to node. 26 min
+  - docker creates files in /var/lib/docker which is in a small volume on AWS instance? 9 minutes into video.
+  - corporate network and k8s share private address space (10.0, 172,16, 192.168). This cause a problem. 11:30 min
+  - test disk io - 15:30 min
+  - repeatable config - 16 min - backup job for JENKINS HOME - and restore job. Simply then writing groovy config jobs.
+  - prune docker resources hourly - 23 min
+  - have different size instance groups to lets job be sized to node. 26 min
 
 ksync - sync laptop with k8s cluster. 
 
@@ -342,11 +399,11 @@ EKS HIPPA Options
 https://github.com/opszero/auditkube
 
 * NIST
-  * https://www.youtube.com/watch?v=AqoDQaeuLXY - NIST Container Security Standards
-  * Containers
-    * https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-190.pdf
-  * Benchmarks 
-    * https://nvd.nist.gov/ncp/checklist/766
+  * https://www.youtube.com/watch?v=AqoDQaeuLXY - NIST Container Security Standards
+  * Containers
+    * https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-190.pdf
+  * Benchmarks 
+    * https://nvd.nist.gov/ncp/checklist/766
 
 API for stable CoreOS version 
 https://coreos.com/dist/aws/aws-stable.json
@@ -398,3 +455,5 @@ https://vitess.io/ - massively scalable MySQL.
         * https://coreruleset.org/ - OWASP ModSecurity Core Rule Set v3.0
 * System Administration
     * kured - Kured (KUbernetes REboot Daemon) is a Kubernetes daemonset that performs safe automatic node reboots. It gets triggered by the package management system of the underlying OS. 
+
+* https://opensource.com/article/20/4/http-kubernetes-skipper

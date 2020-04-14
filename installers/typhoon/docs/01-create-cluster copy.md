@@ -1,26 +1,8 @@
-# Introduction To Typhoon
-
-## Description
-
-Typhoon is a minimal and free Kubernetes distribution.
-
-* Minimal, stable base Kubernetes distribution
-* Declarative infrastructure and configuration
-* Free (freedom and cost) and privacy-respecting
-* Practical for labs, datacenters, and clouds
-
-Typhoon distributes upstream Kubernetes, architectural conventions, and cluster addons, much like a GNU/Linux distribution provides the Linux kernel and userspace components.
-
-## Links
-
-* https://typhoon.psdn.io/
-* https://typhoon.psdn.io/fedora-coreos/aws/
-
-## Process
+# Create Cluster
 
 * Install `terraform` using https://www.terraform.io/downloads.html as a guide or using any packaging method.
 
-* Add the terraform-provider-ct plugin binary for your system to ~/.terraform.d/plugins/, noting the final name.
+* Add the `terraform-provider-ct` plugin binary.
 
 ```bash
 mkdir -p ~/.terraform.d/plugins
@@ -30,10 +12,10 @@ mv terraform-provider-ct-v0.5.0-linux-amd64/terraform-provider-ct ~/.terraform.d
 rm -rf terraform-provider-ct-v0.5.0-linux-amd64.tar.gz terraform-provider-ct-v0.5.0-linux-amd64
 ```
 
-* Connect to your `typhoon` directory.
+* Connect to your `installers/typhoon` directory.
 
 ```bash
-cd typhoon
+cd installers/typhoon
 ```
 
 * Ignore `terraform` state files.
@@ -45,13 +27,6 @@ cat <<EOF > .gitignore
 *.tfstate.backup
 .terraform/
 EOF
-```
-
-* [MAYBE NOT] Create an infrastructure directory. And connect into it.
-
-```
-mkdir -p infra
-cd infra
 ```
 
 * Make sure that you have `AWS_PROFILE` and `AWS_REGION` defined. And that you have run `aws configure` in order to set the secret key values.
@@ -80,7 +55,7 @@ EOF
 * Create a `tempest.tf` file.
 
 ```bash
-PKI_PUBLIC_KEY=$(cat /tmp/david-va-oit-cloud-k8s.pub)
+PKI_PUBLIC_KEY=$(cat /$HOME/.ssh/david-va-oit-cloud-k8s.pub)
 
 cat <<EOF > tempest.tf
 module "tempest" {
@@ -98,13 +73,19 @@ module "tempest" {
   worker_count = 2
   worker_type  = "t3.small"
 }
+
+# Obtain cluster kubeconfig
+resource "local_file" "kubeconfig-tempest" {
+  content  = module.tempest.kubeconfig-admin
+  filename = "$HOME/.kube/configs/tempest-config"
+}
 EOF
 ```
 
 * Initial bootstrapping requires bootstrap.service be started on one controller node. Terraform uses ssh-agent to automate this step. Add your SSH private key to ssh-agent.
 
 ```bash
-ssh-add /tmp/david-va-oit-cloud-k8s.pub
+ssh-add $HOME/.ssh/david-va-oit-cloud-k8s.pem
 ssh-add -L
 ```
 
@@ -126,8 +107,29 @@ terraform plan
 terraform apply
 ```
 
-ERROR: module.tempest.null_resource.copy-controller-secrets[0]: Still creating... [8m40s elapsed]
+* Export `KUBECONFIG` so that `kubectl` knows how to connect.
 
+```
+export KUBECONFIG=$HOME/.kube/configs/tempest-config
+```
 
-https://github.com/coreos/tectonic-installer/issues/2310
+* View pods.
 
+```
+kubectl get pods --all-namespaces
+```
+
+## Make Your Worker Nodes Pass Target Group Healh Check
+
+The following procedure seems to work. However, it might not be the best or even correct approach.
+
+* SSH to each worker node.
+    * Switch to super user.
+    * In /etc/systemd/system/kubelet.service:
+        * Change the `--healthz-port` to 10254.
+        * Add `--healthz-bind-address=0.0.0.0`.
+        * Run `systemctl daemon-reload`.
+        * Run `systemctl restart kubelet`.
+        * Run `systemctl status kubelet`.
+    * Use `/usr/bin/netstat -plant | grep -i kubelet | grep LISTEN | grep 10248` to check the result.
+    * `exit` twice.
