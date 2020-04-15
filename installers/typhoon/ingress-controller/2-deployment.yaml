@@ -18,15 +18,19 @@ spec:
       annotations:
         seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
     spec:
+      # When the --ingress-class=public parameter is used with the 
+      # nginx-ingress-controller, then configMap resource name (for RBAC 
+      # role) will be "ingress-controller-leader-public". Otherwise, it
+      # will be "ingress-controller-leader-nginx"
       serviceAccountName: nginx-ingress-serviceaccount
       containers:
         - name: nginx-ingress-controller
           image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.30.0
           args:
             - /nginx-ingress-controller
-            - --ingress-class=public
+#            - --ingress-class=public
             - --default-backend-service=$(POD_NAMESPACE)/default-http-backend-service
-            - --default-ssl-certificate=$(POD_NAMESPACE)/tls-certificate
+#            - --default-ssl-certificate=$(POD_NAMESPACE)/tls-certificate
           resources:
             requests:
               memory: "64Mi"

@@ -8,14 +8,12 @@ output "ssh_authorized_key" {
 }
 
 module "tempest" {
-  #source = "git::https://github.com/poseidon/typhoon//aws/fedora-coreos/kubernetes?ref=v1.18.0"
-  source = "../../../typhoon/aws/fedora-coreos/kubernetes"
+  source = "git::https://github.com/poseidon/typhoon//aws/fedora-coreos/kubernetes?ref=v1.18.1"
 
   # AWS
   cluster_name = "tempest"
   dns_zone     = "david.va-oit.cloud"
   dns_zone_id  = "Z05543821H7X7WYIBGOOC"
-#  vpc_id       = "vpc-04bdc9b68b19472c3"
 
   ssh_authorized_key = "${local.ssh_authorized_key}"
 
@@ -49,9 +47,4 @@ module "tempest" {
 resource "local_file" "kubeconfig-tempest" {
   content  = module.tempest.kubeconfig-admin
   filename = "/home/medined/.kube/configs/tempest-config"
-}
-
-resource "local_file" "ingress_dns_name" {
-  content  = module.tempest.ingress_dns_name
-  filename = "tempest.ingress_dns_name.txt"
 }

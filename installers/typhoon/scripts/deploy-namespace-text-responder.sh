@@ -55,7 +55,7 @@ metadata:
   name: text-responder-ingress
   namespace: $NAMESPACE
   annotations:
-    kubernetes.io/ingress.class: public
+    kubernetes.io/ingress.class: nginx
 spec:
   rules:
   - host: $TEXT_RESPONDER_HOST
@@ -64,8 +64,11 @@ spec:
       - backend:
           serviceName: text-responder
           servicePort: 80
-        path: "/text"
+        path: "/"
 EOF
+
+# wait for resources to start.
+sleep 5
 
 echo
 echo "curl http://$TEXT_RESPONDER_HOST"

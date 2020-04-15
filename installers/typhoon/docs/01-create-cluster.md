@@ -12,7 +12,7 @@ mv terraform-provider-ct-v0.5.0-linux-amd64/terraform-provider-ct ~/.terraform.d
 rm -rf terraform-provider-ct-v0.5.0-linux-amd64.tar.gz terraform-provider-ct-v0.5.0-linux-amd64
 ```
 
-* Connect to your `typhoon` directory.
+* Connect to your `installers/typhoon` directory.
 
 ```bash
 cd installers/typhoon
@@ -55,11 +55,11 @@ EOF
 * Create a `tempest.tf` file.
 
 ```bash
-PKI_PUBLIC_KEY=$(cat /tmp/david-va-oit-cloud-k8s.pub)
+PKI_PUBLIC_KEY=$(cat /$HOME/.ssh/david-va-oit-cloud-k8s.pub)
 
 cat <<EOF > tempest.tf
 module "tempest" {
-  source = "git::https://github.com/poseidon/typhoon//aws/fedora-coreos/kubernetes?ref=v1.18.0"
+  source = "git::https://github.com/poseidon/typhoon//aws/fedora-coreos/kubernetes?ref=v1.18.1"
 
   # AWS
   cluster_name = "tempest"
@@ -85,7 +85,7 @@ EOF
 * Initial bootstrapping requires bootstrap.service be started on one controller node. Terraform uses ssh-agent to automate this step. Add your SSH private key to ssh-agent.
 
 ```bash
-ssh-add /tmp/david-va-oit-cloud-k8s.pem
+ssh-add $HOME/.ssh/david-va-oit-cloud-k8s.pem
 ssh-add -L
 ```
 
@@ -118,3 +118,59 @@ export KUBECONFIG=$HOME/.kube/configs/tempest-config
 ```
 kubectl get pods --all-namespaces
 ```
+
+## Make Your Worker Nodes Pass Target Group Healh Check
+
+NOTE NOTE NOTE: This procedure is not needed. The ingress controller handles the health check.
+NOTE NOTE NOTE: This procedure is not needed. The ingress controller handles the health check.
+NOTE NOTE NOTE: This procedure is not needed. The ingress controller handles the health check.
+NOTE NOTE NOTE: This procedure is not needed. The ingress controller handles the health check.
+NOTE NOTE NOTE: This procedure is not needed. The ingress controller handles the health check.
+NOTE NOTE NOTE: This procedure is not needed. The ingress controller handles the health check.
+
+TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups \
+  --region $AWS_REGION \
+  --names tempest-workers-http \
+  --query 'TargetGroups[0].TargetGroupArn' \
+  --output text)
+echo $TARGET_GROUP_ARN
+
+INSTANCE0=$(aws elbv2 describe-target-health \
+  --region $AWS_REGION \
+  --target-group-arn $TARGET_GROUP_ARN \
+  --query 'TargetHealthDescriptions[0].Target.Id' \
+  --output text)
+
+INSTANCE1=$(aws elbv2 describe-target-health \
+  --region $AWS_REGION \
+  --target-group-arn $TARGET_GROUP_ARN \
+  --query 'TargetHealthDescriptions[1].Target.Id' \
+  --output text)
+
+PUBLIC_IP0=$(aws ec2 describe-instances \
+  --region $AWS_REGION \
+  --instance-ids $INSTANCE0 \
+  --query 'Reservations[0].Instances[0].PublicIpAddress' \
+  --output text)
+
+PUBLIC_IP1=$(aws ec2 describe-instances \
+  --region $AWS_REGION \
+  --instance-ids $INSTANCE1 \
+  --query 'Reservations[0].Instances[0].PublicIpAddress' \
+  --output text)
+
+ssh -i $HOME/.ssh/david-va-oit-cloud-k8s.pem core@$PUBLIC_IP0
+ssh -i $HOME/.ssh/david-va-oit-cloud-k8s.pem core@$PUBLIC_IP1
+
+The following procedure seems to work. However, it might not be the best or even correct approach.
+
+* SSH to each worker node.
+    * Switch to super user.
+    * In /etc/systemd/system/kubelet.service:
+        * Change the `--healthz-port` to 10254.
+        * Add `--healthz-bind-address=0.0.0.0`.
+        * Run `systemctl daemon-reload`.
+        * Run `systemctl restart kubelet`.
+        * Run `systemctl status kubelet`.
+    * Use `/usr/bin/netstat -plant | grep -i kubelet | grep LISTEN | grep 10248` to check the result.
+    * `exit` twice.

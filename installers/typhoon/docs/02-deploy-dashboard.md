@@ -1,5 +1,13 @@
 # Deploy Dashboard
 
+NOTE NOTE NOTE: This procedure is not needed. Use the client-side `octant` instead.
+NOTE NOTE NOTE: This procedure is not needed. Use the client-side `octant` instead.
+NOTE NOTE NOTE: This procedure is not needed. Use the client-side `octant` instead.
+NOTE NOTE NOTE: This procedure is not needed. Use the client-side `octant` instead.
+NOTE NOTE NOTE: This procedure is not needed. Use the client-side `octant` instead.
+NOTE NOTE NOTE: This procedure is not needed. Use the client-side `octant` instead.
+
+
 There is a standard Dashboard that provides great insight into the workings of a cluster. However, it is not installed by default.
 
 Learn more about the dashboard at https://github.com/kubernetes/dashboard.

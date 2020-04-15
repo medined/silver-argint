@@ -125,8 +125,8 @@ kind: Ingress
 metadata:
   name: text-responder-ingress
   namespace: $NAMESPACE
-  annotations:
-    kubernetes.io/ingress.class: public
+#  annotations:
+#    kubernetes.io/ingress.class: public
 spec:
   rules:
   - host: $TEXT_RESPONDER_HOST

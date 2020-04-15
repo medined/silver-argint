@@ -4,7 +4,7 @@
 
 ```
 kubectl delete namespace text-responder
-./scripts/deploy-text-responder.sh
+./scripts/deploy-namespace-text-responder.sh
 ```
 
 * Create a namespace for `cert-manager`.
@@ -96,6 +96,22 @@ spec:
     - http01:
         ingress:
           class: nginx
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Issuer
+metadata:
+  name: letsencrypt-production
+  namespace: text-responder
+spec:
+  acme:
+    email: dmedined@crimsongovernment.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-production-secret
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
 EOF
 ```
 
@@ -103,6 +119,7 @@ EOF
 
 ```
 kubectl get issuer --namespace text-responder
+kubectl get clusterissuer
 ```
 
 * Add annotation to text-responder ingress.
@@ -115,10 +132,9 @@ metadata:
   name: text-responder-ingress
   namespace: text-responder
   annotations:
-    kubernetes.io/ingress.class: public
-    kubernetes.io/tls-acme: "true"
-    cert-manager.io/acme-challenge-type: http01
-    cert-manager.io/issuer: letsencrypt-staging
+#    kubernetes.io/ingress.class: public
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-staging
 spec:
   tls:
   - hosts:
@@ -131,9 +147,44 @@ spec:
       - backend:
           serviceName: text-responder
           servicePort: 80
-        path: "/text"
+        path: "/"
 EOF
 ```
+
+* Add annotation to text-responder ingress.
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: text-responder-ingress
+  namespace: text-responder
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  tls:
+  - hosts:
+    - text-responder.david.va-oit.cloud
+    secretName: text-responder-tls
+  rules:
+  - host: text-responder.david.va-oit.cloud
+    http:
+      paths:
+      - backend:
+          serviceName: text-responder
+          servicePort: 80
+        path: "/"
+EOF
+```
+
+* Delete secret to get new certificate.
+
+```
+k -n text-responder delete secret text-responder-tls
+```
+
 
 k -n text-responder describe certificate text-responder-tls
 
