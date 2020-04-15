@@ -1,6 +1,10 @@
 # Create Cluster
 
-* Install `terraform` using https://www.terraform.io/downloads.html as a guide or using any packaging method.
+Typhoon is a Kubernetes cluster provisioner tool. After installation a small bit of configuration is needed, then let it do the heavy lifting.
+
+## Install and Configure Typhoon Software
+
+* Install `terraform` using https://www.terraform.io/downloads.html as a guide or use any packaging method.
 
 * Add the `terraform-provider-ct` plugin binary.
 
@@ -18,25 +22,31 @@ rm -rf terraform-provider-ct-v0.5.0-linux-amd64.tar.gz terraform-provider-ct-v0.
 cd installers/typhoon
 ```
 
-* Ignore `terraform` state files.
+* Ignore `terraform` state files. These files are where Typhoon stores information about the provision process and your cluster. `providers.tf` is ignored because it is different for each DevSecOps person.
 
 ```bash
 cat <<EOF > .gitignore
-# .gitignore
+providers.tf
 *.tfstate
 *.tfstate.backup
 .terraform/
 EOF
 ```
 
-* Make sure that you have `AWS_PROFILE` and `AWS_REGION` defined. And that you have run `aws configure` in order to set the secret key values.
+* Make sure that you have `AWS_PROFILE` and `AWS_REGION` defined. And that you have run `aws configure` in order to set the secret key values. I place these commands in my `$HOME/.bashrc` so they are always available.
 
 ```bash
 export AWS_PROFILE=ic1
 export AWS_REGION=us-east-1
 ```
 
-* Create a `providers.tf` file. Note that this file will be different for every DevSecOps person since it refers to a location in their home directory.
+* Define the public key that will be used to access the cluster using SSH. This should be the public key from an EC2 Key Pair.
+
+```bash
+export PKI_PUBLIC_KEY=$(cat /$HOME/.ssh/david-va-oit-cloud-k8s.pub)
+```
+
+* Create a `providers.tf` file. Note that this file will be different for every DevSecOps person since it refers to a location in their home directory. It might not look different below, but the $HOME gets interpreted.
 
 ```bash
 cat <<EOF > providers.tf
@@ -52,14 +62,14 @@ provider "ct" {
 EOF
 ```
 
-* Create a `tempest.tf` file.
-
-```bash
-PKI_PUBLIC_KEY=$(cat /$HOME/.ssh/david-va-oit-cloud-k8s.pub)
+* Create a `tempest.tf` file. It is named after the cluster name. If you want a different name, change this file name as well. The `ref` option pulls that tag from Github. Make sure to change the following:
+  * cluster_name
+  * dns_zone
+  * dns_zone_id
 
 cat <<EOF > tempest.tf
 module "tempest" {
-  source = "git::https://github.com/poseidon/typhoon//aws/fedora-coreos/kubernetes?ref=v1.18.0"
+  source = "git::https://github.com/poseidon/typhoon//aws/fedora-coreos/kubernetes?ref=v1.18.1"
 
   # AWS
   cluster_name = "tempest"
@@ -82,11 +92,10 @@ resource "local_file" "kubeconfig-tempest" {
 EOF
 ```
 
-* Initial bootstrapping requires bootstrap.service be started on one controller node. Terraform uses ssh-agent to automate this step. Add your SSH private key to ssh-agent.
+* Terraform uses ssh-agent to automate this step. Add your SSH private key to ssh-agent. This command can also be added to your `$HOME/.bashrc` file.
 
 ```bash
 ssh-add $HOME/.ssh/david-va-oit-cloud-k8s.pem
-ssh-add -L
 ```
 
 * Initialize `terraform`.
@@ -107,7 +116,7 @@ terraform plan
 terraform apply
 ```
 
-* Export `KUBECONFIG` so that `kubectl` knows how to connect.
+* Export `KUBECONFIG` so that `kubectl` knows how to connect. Another great command to add to your `$HOME/.bashrc` file.
 
 ```
 export KUBECONFIG=$HOME/.kube/configs/tempest-config
@@ -119,20 +128,12 @@ export KUBECONFIG=$HOME/.kube/configs/tempest-config
 kubectl get pods --all-namespaces
 ```
 
-## Make Your Worker Nodes Pass Target Group Healh Check
+## A Note About Unhealthy Instances
 
-The following procedure seems to work. However, it might not be the best or even correct approach.
+The cluster has one network load balancer that accepts requests from the internet on ports 80, 443, and 6443. Each port has its own target group:
 
-* SSH to each worker node.
-    * Switch to super user.
-    * In /etc/systemd/system/kubelet.service:
-        * Change the `--healthz-port` to 10248.
-        * Add `--healthz-bind-address 0.0.0.0`.
-        * Run `systemctl daemon-reload`.
-        * Run `systemctl restart kubelet`.
-    * Use `/usr/bin/netstat -plant | grep -i kubelet | grep LISTEN | grep 10248` to check the result.
-    * `exit` twice.
-* In the AWS console, change the `tempest-workers-http` and `tempest-workers-https` target groups.
-    * Change the health check port to 10248.
-* In the AWS console, change the `tempest-worker` security group.
-    * Add a rule to allow traffic on 10248.
+* tempest-controllers - master node - has healthy instances.
+* tempest-http - worker nodes - has unhealthy instances.
+* tempest-https - worker nodes - has unhealthy instances.
+
+The instances are unhealthy because there is no process responding to the health checks. This makes sense because no ingress controller has been created yet. It is the job of the ingress controller to respond to the health check. Look in the `ingress-controller` directory for the manifests.

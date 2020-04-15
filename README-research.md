@@ -18,6 +18,47 @@ resources:
 EOF
 ```
 
+# kuard
+
+Kubernetes Up And Running Demo
+
+Not Working. Gets 503 error. See ingress controller logs.
+
+```bash
+kubectl run --image=gcr.io/kuar-demo/kuard-amd64:1 kuard --replicas=2
+
+dig kuard.david.va-oit.cloud
+
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: kuard
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: kuard
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: kuard-ingress
+  annotations:
+    kubernetes.io/ingress.class: public
+spec:
+  rules:
+  - host: kuard.david.va-oit.cloud
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: kuard
+          servicePort: 80
+EOF
+```
+
 # Rolling Change To SSH Key
 
 * https://github.com/kubernetes/kops/blob/master/docs/security.md
@@ -418,3 +459,10 @@ https://vitess.io/ - massively scalable MySQL.
 * https://octant.dev/
 * http://kontain.me/
 * https://get-ytt.io/
+
+* https://opensource.com/article/20/4/http-kubernetes-skipper
+
+* https://github.com/containers/udica
+* https://github.com/containers/oci-seccomp-bpf-hook
+* https://github.com/mairin/selinux-coloring-book
+* https://github.com/mairin/coloringbook-container-commandos
