@@ -30,7 +30,6 @@ spec:
             - /nginx-ingress-controller
 #            - --ingress-class=public
             - --default-backend-service=$(POD_NAMESPACE)/default-http-backend-service
-#            - --default-ssl-certificate=$(POD_NAMESPACE)/tls-certificate
           resources:
             requests:
               memory: "64Mi"

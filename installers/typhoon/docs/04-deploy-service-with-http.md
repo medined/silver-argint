@@ -5,7 +5,6 @@
 * Set the namespace and host for the service to be deployed later.
 
 ```bash
-NAMESPACE=text-responder
 TEXT_RESPONDER_HOST="text-responder.david.va-oit.cloud"
 ```
 
@@ -16,16 +15,16 @@ kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
-    name: $NAMESPACE
+    name: text-responder
     labels:
-        name: $NAMESPACE
+        name: text-responder
 EOF
 ```
 
-* Set the `kubectl` context so that $NAMESPACE is the current namespace. Undo this action by using `default` as the namespace.
+* Set the `kubectl` context so that `text-responder` is the current namespace. Undo this action by using `default` as the namespace.
 
 ```bash
-kubectl config set-context --current --namespace=$NAMESPACE
+kubectl config set-context --current --namespace=text-responder
 ```
 
 ## Deploy text-responder Application
@@ -40,7 +39,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: text-responder
-  namespace: $NAMESPACE
+  namespace: text-responder
 spec:
   selector:
     matchLabels:
@@ -63,7 +62,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: text-responder
-  namespace: $NAMESPACE
+  namespace: text-responder
 spec:
   ports:
   - port: 80
@@ -124,9 +123,9 @@ apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: text-responder-ingress
-  namespace: $NAMESPACE
-#  annotations:
-#    kubernetes.io/ingress.class: public
+  namespace: text-responder
+  annotations:
+    kubernetes.io/ingress.class: nginx
 spec:
   rules:
   - host: $TEXT_RESPONDER_HOST

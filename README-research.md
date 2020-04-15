@@ -457,3 +457,8 @@ https://vitess.io/ - massively scalable MySQL.
     * kured - Kured (KUbernetes REboot Daemon) is a Kubernetes daemonset that performs safe automatic node reboots. It gets triggered by the package management system of the underlying OS. 
 
 * https://opensource.com/article/20/4/http-kubernetes-skipper
+
+* https://github.com/containers/udica
+* https://github.com/containers/oci-seccomp-bpf-hook
+* https://github.com/mairin/selinux-coloring-book
+* https://github.com/mairin/coloringbook-container-commandos

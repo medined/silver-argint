@@ -12,11 +12,21 @@ The NGINX Ingress Controller for Kubernetes provides enterprise‑grade delivery
 
 ## Procedure
 
-* Apply the ingress-controller manifests.
+All resources for the ingress-controller are created using manifests which makes the installation process just one line.
 
 ```bash
 kubectl apply -R -f ingress-controller
 ```
+
+There are some things to note about the manifests.
+
+>The `nginx-ingress-controller-deployment` deployment pulls v0.30.0 of its image. Check https://quay.io/repository/kubernetes-ingress-controller/nginx-ingress-controller?tab=tags for the latest `nginx-ingress-controller` tag.
+
+>The `nginx-ingress-controller-deployment` should respond to :10254/healthz to make the target group health check happy.
+
+>The `--ingress-class=public` parameter is commented out because I don't understand it enough. I think when it is used, then the Ingress resource needs to have the `kubernetes.io/ingress.class: public` annotation. However, this might conflict with the `http01` solver in some way. For now, it is not worth figuring out.
+
+>The CPU and Memory resource limits are completely arbitary and have no reflection of real-world use. In a production environment, make sure to monitor.
 
 * The following resources are created.
   * 0-rbac
@@ -33,7 +43,3 @@ kubectl apply -R -f ingress-controller
     * Deployment: `nginx-ingress-controller-deployment`
   * 3-service
     * Service: `nginx-ingress-controller-service`
-
->The `nginx-ingress-controller-deployment` deployment pulls v0.30.0 of its image. Check https://quay.io/repository/kubernetes-ingress-controller/nginx-ingress-controller?tab=tags for the latest `nginx-ingress-controller` tag.
-
->The `nginx-ingress-controller-deployment` should respond to :10254/healthz to make the target group health check happy.

@@ -26,11 +26,11 @@ EOF
 kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.crds.yaml
 ```
 
-* Install certificate manager.
+* Install certificate manager. Check the chart versions at https://hub.helm.sh/charts/jetstack/cert-manager to find the latest version number.
 
 ```
 helm repo add jetstack https://charts.jetstack.io
-helm install cert-manager jetstack/cert-manager --version v0.14.1 --namespace cert-manager
+helm install cert-manager jetstack/cert-manager --version v0.14.2 --namespace cert-manager
 ```
 
 * Create an issuer to test the webhook works okay.
@@ -77,15 +77,16 @@ kubectl describe certificate -n cert-manager-test
 kubectl delete namespace cert-manager-test
 ```
 
-* Create Let's Encrypt Issuer for a development and production environments. The main difference is the ACME server URL.
+* Create Let's Encrypt ClusterIssuer for staging and production environments. The main difference is the ACME server URL. I use the term `staging` because that is what Let's Encrypt uses.
+
+>Change the email address.
 
 ```bash
 kubectl apply -f - <<EOF
 apiVersion: cert-manager.io/v1alpha2
-kind: Issuer
+kind: ClusterIssuer
 metadata:
   name: letsencrypt-staging
-  namespace: text-responder
 spec:
   acme:
     email: dmedined@crimsongovernment.com
@@ -98,10 +99,9 @@ spec:
           class: nginx
 ---
 apiVersion: cert-manager.io/v1alpha2
-kind: Issuer
+kind: ClusterIssuer
 metadata:
   name: letsencrypt-production
-  namespace: text-responder
 spec:
   acme:
     email: dmedined@crimsongovernment.com
@@ -118,11 +118,10 @@ EOF
 * Check on the status of the development issuer. The entries should be ready.
 
 ```
-kubectl get issuer --namespace text-responder
 kubectl get clusterissuer
 ```
 
-* Add annotation to text-responder ingress.
+* Add annotation to text-responder ingress. This uses the staging Let's Encrypt to avoid rate limited while testing.
 
 ```bash
 kubectl apply -f - <<EOF
@@ -132,7 +131,6 @@ metadata:
   name: text-responder-ingress
   namespace: text-responder
   annotations:
-#    kubernetes.io/ingress.class: public
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt-staging
 spec:
@@ -150,6 +148,19 @@ spec:
         path: "/"
 EOF
 ```
+
+* Review the certificate that cert-manager has created. 
+
+```bash
+kubectl -n text-responder describe certificate text-responder-tls
+```
+
+* Review the secret that is being created by cert-manager.
+
+```bash
+kubectl -n text-responder describe secret text-responder-tls
+```
+
 
 * Add annotation to text-responder ingress.
 
@@ -185,9 +196,8 @@ EOF
 k -n text-responder delete secret text-responder-tls
 ```
 
+* At this point, an HTTPS request should work.
 
-k -n text-responder describe certificate text-responder-tls
-
-k -n text-responder -o yaml get certificate text-responder-tls
-
-curl http://text-responder.david.va-oit.cloud/.well-known/acme-challenge/jz-p2oPwN0RtkRpczhDoIbzxmRDLgnc8pgUJYN5xjks
+```bash
+curl https://text-responder.david.va-oit.cloud/
+```

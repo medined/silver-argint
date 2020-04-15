@@ -1,4 +1,4 @@
-# .gitignore
+providers.tf
 *.tfstate
 *.tfstate.backup
 .terraform/
