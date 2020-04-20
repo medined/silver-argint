@@ -84,27 +84,7 @@ kubectl get all --namespace ingress
 =================================================================
 =================================================================
 
-
-./istio-install.sh -f $CONFIG_FILE $NAMESPACE
-
-./create-vanity-url.sh -f $CONFIG_FILE $NAMESPACE registry
-# pause until the dig answer shows AWS information.
-./custom-docker-registry-install.sh -f $CONFIG_FILE $NAMESPACE
-
-./create-vanity-url.sh -f $CONFIG_FILE $NAMESPACE jenkins
-# pause until the dig answer shows AWS information.
-./jenkins-helm-set-admin-password-secret.sh $NAMESPACE $JENKINS_ADMIN_PASSWORD
-./jenkins-helm-install.sh -f $CONFIG_FILE $NAMESPACE
-./jenkins-helm-check.sh $NAMESPACE
-./jenkins-proxy-start.sh $NAMESPACE
-<<<<<<< Updated upstream
-=======
-
-
-
+```bash
 curl -o $HOME/bin/stern -L https://github.com/wercker/stern/releases/download/1.11.0/stern_linux_amd64
 chmod +x $HOME/bin/stern
-
-
-ps auxwww
->>>>>>> Stashed changes
+```

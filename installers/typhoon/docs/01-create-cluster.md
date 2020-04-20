@@ -64,6 +64,7 @@ EOF
 ```
 
 * Create a `tempest.tf` file. It is named after the cluster name. If you want a different name, change this file name as well. The `ref` option pulls that tag from Github. Make sure to change the following:
+
   * cluster_name
   * dns_zone
   * dns_zone_id
