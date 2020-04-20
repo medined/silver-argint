@@ -68,6 +68,7 @@ EOF
   * dns_zone
   * dns_zone_id
 
+```bash
 cat <<EOF > tempest.tf
 module "tempest" {
   source = "git::https://github.com/poseidon/typhoon//aws/fedora-coreos/kubernetes?ref=v1.18.1"
