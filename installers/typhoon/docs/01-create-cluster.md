@@ -38,7 +38,6 @@ EOF
 ```bash
 export AWS_PROFILE=ic1
 export AWS_REGION=us-east-1
-export PKI_PUBLIC_KEY=$(cat /$HOME/.ssh/david-va-oit-cloud-k8s.pub)
 ```
 
 * Define the public key that will be used to access the cluster using SSH. This should be the public key from an EC2 Key Pair.
@@ -69,7 +68,6 @@ EOF
   * dns_zone
   * dns_zone_id
 
-```bash
 cat <<EOF > tempest.tf
 module "tempest" {
   source = "git::https://github.com/poseidon/typhoon//aws/fedora-coreos/kubernetes?ref=v1.18.1"

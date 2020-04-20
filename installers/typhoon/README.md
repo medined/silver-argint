@@ -34,57 +34,22 @@ Typhoon distributes upstream Kubernetes, architectural conventions, and cluster 
 ./scripts/krew-install.sh
 ```
 
-* Install dashboard and start proxy in background. Or see [Deploy Dashboard](docs/02-deploy-dashboard.md)
-
-```bash
-./scripts/dashboard-proxy-start.sh
-```
-
-* Create a namespace.
-
-```bash
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-    name: $NAMESPACE
-    labels:
-        name: $NAMESPACE
-EOF
-```
-
-* Set the `kubectl` context so that $NAMESPACE is the current namespace. Undo this action by using `default` as the namespace.
-
-```bash
-kubectl config set-context --current --namespace=$NAMESPACE
-```
+* Install `octant`, the client-side dashboard.
 
 * [Deploy Ingress Controller](docs/03-deploy-ingress-controller.md)
 
-* See the resources just added. Only one `nginx-ingress-controller` is needed per cluster.
-
-```bash
-kubectl get all --namespace ingress
-```
-
-* Not used - [Deploy Cert Manager](docs/03-deploy-cert-manager.md)
+* [Deploy Cert Manager](docs/03-deploy-cert-manager.md)
 
 * [Deploy Service with HTTPS](docs/04-deploy-service-with-http.md)
 
 * [Add HTTPS To Service](docs/05-add-https-to-service.md)
 
 
-=================================================================
-=================================================================
-=================================================================
-=================================================================
-=================================================================
-=================================================================
-=================================================================
-=================================================================
-=================================================================
+-----------------------------------------------------------------
+-----------------------------------------------------------------
 
 ```bash
 curl -o $HOME/bin/stern -L https://github.com/wercker/stern/releases/download/1.11.0/stern_linux_amd64
 chmod +x $HOME/bin/stern
 ```
+
