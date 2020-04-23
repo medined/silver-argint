@@ -3,12 +3,16 @@
 RANDOMIZER=$(uuid | cut -b-5)
 POD_NAME="bash-shell-$RANDOMIZER"
 IMAGE=medined/jnlp-slave-nodejs:13
+NAMESPACE=$(uuid)
 
-cat <<EOF > yaml/shell-demo.yaml
+$HOME/bin/kubectl create namespace $NAMESPACE
+
+$HOME/bin/kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Pod
 metadata:
   name: $POD_NAME
+  namespace: $NAMESPACE
 spec:
   containers:
   - name: $POD_NAME
@@ -20,16 +24,15 @@ spec:
   restartPolicy: Never
 EOF
 
-kubectl apply -f yaml/shell-demo.yaml
-
 echo "---------------------------------"
 echo "| Press ^C when pod is running. |"
 echo "---------------------------------"
 
-kubectl get pod $POD_NAME -w
+$HOME/bin/kubectl -n $NAMESPACE get pod $POD_NAME -w
 
 echo
 
-kubectl exec -it $POD_NAME -- /bin/bash
+$HOME/bin/kubectl -n $NAMESPACE exec -it $POD_NAME -- /bin/bash
 
-kubectl delete pod $POD_NAME
+$HOME/bin/kubectl -n $NAMESPACE delete pod $POD_NAME
+$HOME/bin/kubectl delete namespace $NAMESPACE

@@ -3,20 +3,23 @@
 RANDOMIZER=$(uuid | cut -b-5)
 POD_NAME="bash-shell-$RANDOMIZER"
 IMAGE=centos
+NAMESPACE=$(uuid)
 
 SECRET_FILE=/tmp/bash-shell-secret.txt
 if [ ! -f $SECRET_FILE ]; then
   uuid > $SECRET_FILE
 fi
 
-$HOME/bin/kubectl create configmap greek-gyro --from-literal=onions=no
-$HOME/bin/kubectl create secret generic bash-shell-secret --from-file=$SECRET_FILE
+$HOME/bin/kubectl create namespace $NAMESPACE
+$HOME/bin/kubectl -n $NAMESPACE create configmap greek-gyro --from-literal=onions=no
+$HOME/bin/kubectl -n $NAMESPACE create secret generic bash-shell-secret --from-file=$SECRET_FILE
 
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Pod
 metadata:
   name: $POD_NAME
+  namespace: $NAMESPACE
 spec:
   containers:
   - name: $POD_NAME
@@ -61,7 +64,7 @@ echo "---------------------------------"
 echo "| Press ^C when pod is running. |"
 echo "---------------------------------"
 
-$HOME/bin/kubectl get pod $POD_NAME -w
+$HOME/bin/kubectl -n $NAMESPACE get pod $POD_NAME -w
 
 echo
 
@@ -75,9 +78,10 @@ echo "|   NODE_NAME is availabe as an environment variable."
 echo "|   ONIONS is availabe as an environment variable."
 echo 
 
-$HOME/bin/kubectl exec -it $POD_NAME -- /bin/bash
-$HOME/bin/kubectl delete pod $POD_NAME
-$HOME/bin/kubectl delete configmap greek-gyro
-$HOME/bin/kubectl delete secret bash-shell-secret
+$HOME/bin/kubectl -n $NAMESPACE exec -it $POD_NAME -- /bin/bash
+$HOME/bin/kubectl -n $NAMESPACE delete pod $POD_NAME
+$HOME/bin/kubectl -n $NAMESPACE delete configmap greek-gyro
+$HOME/bin/kubectl -n $NAMESPACE delete secret bash-shell-secret
+$HOME/bin/kubectl delete namespace $NAMESPACE
 
 rm -f $SECRET_FILE
