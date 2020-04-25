@@ -29,9 +29,16 @@ with the `container_t` type and content is created with the `container_file_t` t
 
 ## 
 
-## Problem To Be Solved
+## Question
 
-The `container_t` 
+### When a container is restarted, does the SELinux labels changed?
+
+No, Container runtimes do not destroy the "container" when the processes in the container stop. They 
+record the information on how to run the container, including the SELinux labels used to run them. So, 
+when you stop and start a container, it will always run with the same MCS label. Not only that, but 
+the container runtimes also read their database or existing containers when they start, reserving 
+the MCS labels that are already used, so they can guarantee that all new containers will not 
+conflict with already reserved MCS labels.
 
 ### Changing MSC Labels
 
@@ -39,4 +46,12 @@ Containers get a pair of randomly chosen MCS [Multi-Category Security] labels by
 create obviously end up with those same categories. However, when it's time to rebuild or upgrade the container, 
 the files are now inaccessible because the new container has a different pair of categories.
 
+# Type Glossary
 
+| Software | Process | Files |
+| ---------|-------- | ----- |
+| LibVirt | svirt_t | svirt_image_t  |
+
+# Links
+
+* https://opensource.com/article/18/2/understanding-selinux-labels-container-runtimes
