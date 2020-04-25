@@ -146,7 +146,7 @@ echo "install packages."
 ssh -t \
   -i $PKI_PUBLIC_PEM \
   $SSH_USER@$PUBLIC_IP \
-  "sudo rpm-ostree install audit conntrack ethtool python libselinux-python3 setroubleshoot"
+  "sudo rpm-ostree install audit conntrack ethtool python libselinux-python3 setools setroubleshoot udica"
 
 echo "reboot instance."
 aws ec2 reboot-instances --instance-ids $INSTANCE_ID --region $AWS_REGION
