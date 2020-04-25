@@ -1,5 +1,17 @@
 # Troubleshooting
 
+## Tools
+
+## kubeval
+
+Kubeval is used to validate one or more Kubernetes configuration files, and is often used locally as part of a development workflow as well as in CI pipelines.
+
+```
+curl -L -o kubeval.tgz https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+tar -C $HOME/bin -xf kubeval.tgz
+rm kubeval.tgz
+```
+
 ## SSL Certificate Request Not Completing
 
 ### Did Not Get Expected Response
