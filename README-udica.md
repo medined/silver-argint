@@ -12,6 +12,12 @@ Udica helps to generate SELinux policies for containers.
 unique. They are prefixed with a c or category. SELinux also needs a sensitivity level s0. An example is
 `s0:c1,c2`. The order of the numbers are not important.
 
+* MCS Datastore - Each thing (such as LibVirt or Docker) that manages MCS labels has its own database 
+so that labels can be tracked. Some tools (or toolchains) share an MCS database so they can read each 
+others files. When tools do not share the same MCS datastore, labels can collide so it might be better to run 
+them on separate  machines or use an orchestration tool like OpenShift or Kubernetes to provide guaranteed
+label uniqueness.
+
 * SELinux - Security-Enhanced Linux (SELinux) is a Linux kernel security module that provides a 
 mechanism for supporting access control security policies, including mandatory access controls (MAC). 
 SELinux is a set of kernel modifications and user-space tools that have been added to various 
@@ -26,8 +32,6 @@ in the dominance statement (low to high).
 
 * Type - Process and content are assigned to types. For example, Processes are usually run 
 with the `container_t` type and content is created with the `container_file_t` type.
-
-## 
 
 ## Question
 
