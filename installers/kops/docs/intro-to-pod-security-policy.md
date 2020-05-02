@@ -1,16 +1,15 @@
 # Introduction To Pod Security Policy (PSP)
 
+## Links
+
+* https://starkandwayne.com/blog/protecting-yourself-with-pod-security-policies/
+
 ## Questions
 
 All of the steps in this document work. However, some mysteries remain.
 
 * Given a k8s cluster created by someone else, how can kubectl be configured to access it? 
 * How does that access by limited by service account instead of having admin rights?
-* What is the difference in the following two statements. Why does the second statement allow Deployments while the first allows Pod creation?
-```bash
-psp-admin create rolebinding rb-id2 --role=psp-role --serviceaccount=psp-ns:psp-sa
-psp-admin create rolebinding rb-id3 --role=psp-role --serviceaccount=psp-ns:default
-```
 * How do we create actual user logins for the cluster instead of using service accounts which are meant for machine-to-machine use and not human-to-machine? See https://www.tremolosecurity.com/kubernetes/ for more information.
 * Can kops add the adminission controllers when the cluster is created?
 
@@ -38,7 +37,38 @@ The goal of this document is two create two policies. One for administrators and
 
 * https://github.com/grafeas/kritis - Deploy-time Policy Enforcer for Kubernetes applications. Binary Authorization allows stakeholders to ensure that deployed software artifacts have been prepared according to organization’s standards.
 
-## Adding Adminission Controllers to a kops-based cluster
+## Is Your Cluster Vulnerable?
+
+* Based on https://starkandwayne.com/blog/protecting-yourself-with-pod-security-policies/
+
+Before getting into details, let's see if your cluster is vulnerable to a simple hack. The following set of commands creates a `kubectl` plugin which tries to get `root` on a cluster node. If the pod runs, you'll have full superuser permissions on a worker node.
+
+```bash
+cat <<EOF > $HOME/bin/kubectl-r00t.sh
+#!/bin/bash
+exec kubectl run r00t -it --rm \
+  --restart=Never \
+  --image nah r00t \
+  --overrides '{"spec":{"hostPID": true, "containers":[{"name":"x","image":"alpine","command":["nsenter","--mount=/proc/1/ns/mnt","--","/bin/bash"],"stdin": true,"tty":true,"securityContext":{"privileged":true}}]}}' "$@"
+EOF
+chmod +x $HOME/bin/kubectl-r00t.sh
+kubectl r00t
+# do root stuff.
+exit
+^C
+kubernetes delete pod r00t
+```
+
+If that worked, it worked because the pod
+
+* was privileged
+* was in the hostPID namespace
+* ran as the root user (UID/GID of 0/0)
+* ran with stdin attached, and a controlling terminal
+
+## Adding Adminmission Controllers
+
+## kops-based cluster
 
 * Edit the cluster.
 
@@ -74,6 +104,10 @@ kops update cluster --yes
 kops rolling-update cluster --yes
 ```
 
+## typhoon-based cluster
+
+TBD
+
 ## PSP List
 
 You can view a list of all PSPs using the following command.
@@ -82,7 +116,7 @@ You can view a list of all PSPs using the following command.
 kubectl get podsecuritypolicies
 ```
 
-There should be an already created policy called `kube-system` that has the following manifest:
+There might be a created policy called `kube-system` that has the following manifest:
 
 ```yaml
 apiVersion: policy/v1beta1
@@ -114,132 +148,332 @@ spec:
   - '*'
 ```
 
-## Create psp-admin and psp-user service accounts
+## Limit Permisions For Unprivleged User
 
 In order to demonstrate PSPs, you need to create service accounts with different permissions. In this section you'll create two users, one will be able to create any pod and one which will be limited. During a standard deployment, the limited service accont should be used.
 
-Notice that two aliases are also created to allow for easy testing of the PSP.
+Notice that two aliases are also created to allow for easy testing of the PSP. The `kadmin` command is a convenience to avoid adding the namespace.
+
+* As always, create a namespace for experimentation.
 
 ```bash
 kubectl create namespace psp-ns
-kubectl create serviceaccount -n psp-ns psp-sa
-kubectl create rolebinding -n psp-ns rb-id --clusterrole=edit --serviceaccount=psp-ns:psp-sa
-alias psp-admin='kubectl -n psp-ns'
-alias psp-user='kubectl --as=system:serviceaccount:psp-ns:psp-sa -n psp-ns'
 ```
 
-A *normal* uses a service account (psp-sa) but the admin user does not. Since no service account is used, it has all of the permissions.
-
-## PSP Manifest
+* Now create a service account.
 
 ```bash
-cat <<EOF > yaml/restricted.yaml
+kubectl --namespace psp-ns create serviceaccount psp-sa
+```
+
+kubectl --namespace psp-ns create rolebinding \
+  fake-editor \
+  --clusterrole=edit \
+  --serviceaccount=psp-ns:psp-sa
+
+kubectl create -f https://git.io/fNhJX -n psp-ns \
+  --as-group=system:authenticated \
+  --as=system:serviceaccount:psp-ns:psp-sa
+
+* Here are some alias to make life easier in later steps. A *normal* user uses a service account (psp-sa) but the admin user does not. Since no service account is used, it has all of the permissions.
+
+```bash
+alias kadmin='kubectl --namespace psp-ns'
+alias kuser='kubectl --namespace psp-ns --as=system:serviceaccount:psp-ns:psp-sa'
+```
+
+* Create a role and a role binding to allow the service account to deploy pods. Keep in mind that roles serve a different purpose that pod security polices. For example, with this role the service account can't list deployments or even service accounts so it can't see itself.
+
+```bash
+kubectl apply -f - <<EOF
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: psp-sa
+  namespace: psp-ns
+rules:
+  - apiGroups: ['']
+    resources: [pods]
+    verbs:     [get, list, watch, create, update, patch, delete]
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: psp-sa
+  namespace: psp-ns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind:     Role
+  name:     psp-sa
+subjects:
+  - kind: ServiceAccount
+    name: psp-sa
+EOF
+```
+
+* Create a privleged pod security policy.
+
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: privileged
+spec:
+  privileged: true
+  allowPrivilegeEscalation: true
+  allowedCapabilities: ['*']
+  volumes: ['*']
+  hostNetwork: true
+  hostIPC:     true
+  hostPID:     true
+  hostPorts: [{ min: 0, max: 65535 }]
+  runAsUser:          { rule: RunAsAny }
+  seLinux:            { rule: RunAsAny }
+  supplementalGroups: { rule: RunAsAny }
+  fsGroup:            { rule: RunAsAny }
+EOF
+```
+
+* Create a restricted security policy.
+
+```bash
+kubectl apply -f - <<EOF
+---
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: restricted
 spec:
-  privileged: false
+  privileged:               false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities: [ALL]
+  readOnlyRootFilesystem:   false
+
+  hostNetwork: false
+  hostIPC:     false
+  hostPID:     false
+
   runAsUser:
+    # Require the container to run without root privileges.
     rule: MustRunAsNonRoot
+
   seLinux:
+    # Assume nodes are using AppArmor rather than SELinux.
     rule: RunAsAny
-  fsGroup:
-    rule: RunAsAny
+
   supplementalGroups:
-    rule: RunAsAny
+    rule: MustRunAs
+    ranges: [{ min: 1, max: 65535 }]
+
+  fsGroup:
+    rule: MustRunAs
+    ranges: [{ min: 1, max: 65535 }]
+
+  # Allow core volume types.
   volumes:
-  - '*'
+    - configMap
+    - emptyDir
+    - projected
+    - secret
+    - downwardAPI
+    - persistentVolumeClaim
 EOF
-kubectl apply -f yaml/restricted.yaml
 ```
 
-## Create a pod that should fail
+* List the pod security polices in place. Since we have no cluster roles allowing their use, they are inert and not protecting anything.
 
 ```bash
-cat <<EOF > yaml/pod-pause.yaml
+kubectl get psp
+```
+
+* Create a cluster role that can list and get all security policies but only use the restricted policy.
+
+```bash
+kubectl delete ClusterRole default-psp
+
+kubectl apply -f - <<EOF
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: default-psp
+rules:
+  - apiGroups:     [policy]
+    resources:     [podsecuritypolicies]
+    resourceNames: []
+    verbs:         [list, get]
+
+  - apiGroups:     [policy]
+    resources:     [podsecuritypolicies]
+    resourceNames: [restricted]
+    verbs:         [use]
+EOF
+```
+
+
+* Now bind the cluster role to all users and all service accounts.
+
+```bash
+kubectl apply -f - <<EOF
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: default-psp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind:     ClusterRole
+  name:     default-psp
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind:     Group
+    name:     system:authenticated # All authenticated users
+  - apiGroup: rbac.authorization.k8s.io
+    kind:     Group
+    name:     system:serviceaccounts
+EOF
+```
+
+* As the normal user, list pods.
+
+```bash
+kuser get pods
+```
+
+* Using `can-i` explore what permissions exist.
+
+```bash
+kuser auth can-i create pods
+kuser auth can-i use psp/privileged
+kuser auth can-i use psp/restricted
+
+kadmin auth can-i create pods
+kadmin auth can-i use psp/privileged
+kadmin auth can-i use psp/restricted
+```
+
+NOTE: Ignore the warning: "resource 'podsecuritypolicies' is not namespace scoped in group 'policy'"
+
+* Try the root hack as the normal user. It may take a few seconds, but you'll see an error message.
+
+```bash
+kubectl r00t --namespace psp-ns --as=system:serviceaccount:psp-ns:psp-sa
+```
+
+## Show EXEC Does Not Work
+
+The following sequence of steps shows that the `kubectl exec` command won't work for the non-privledged user.
+
+```bash
+POD_NAME="bash-shell-$(uuid | cut -b-5)"
+
+kuser apply -f - <<EOF
 apiVersion: v1
 kind: Pod
 metadata:
-  name: pod-pause
+  name: $POD_NAME
+  namespace: psp-ns
 spec:
   containers:
-  - name: pause
-    image: k8s.gcr.io/pause
-EOF
-psp-user create -f yaml/pod-pause.yaml
-```
-
-With luck, you'll see the following error:
-
-```bash
-Error from server (Forbidden): error when creating "yaml/pod-pause.yaml": pods "pod-pause" is forbidden: unable to validate against any pod security policy: []
-```
-
-Use the `auth can-i` sub-command to see the error. The `no` means their is no authorization.
-
-```bash
-psp-user auth can-i use podsecuritypolicy/psp-policy
-Warning: resource 'podsecuritypolicies' is not namespace scoped in group 'policy'
-no
-```
-
-## Use RoleBinding To Give psp-user The Policy
-
-The value of the `resourceNames` field is the name of the PSP created previously. Notice that the service account is references as `psp-ns:psp-sa` which is a combination of a namespace and a service account.
-
-```bash
-psp-admin apply -f - <<EOF
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: psp-role
-rules:
-  - apiGroups: ['policy']
-    resources: ['podsecuritypolicies']
-    verbs: ['use']
-    resourceNames: ['restricted']
+  - name: $POD_NAME
+    image: centos
+    command: ["/bin/bash"]
+    args: ["-c", "while true; do date; sleep 5; done"]
+  dnsPolicy: Default
+  hostNetwork: true
+  restartPolicy: Never
 EOF
 
-psp-admin create rolebinding rb-id2 --role=psp-role --serviceaccount=psp-ns:psp-sa
+# Press ^C when pod is ready.
+kuser get pod $POD_NAME -w
+
+# This fails.
+kuser exec -it $POD_NAME -- /bin/bash
+
+# This works.
+kadmin exec -it $POD_NAME -- /bin/bash
+
+kuser delete pod $POD_NAME
 ```
 
-## Sucessfully Start Pod As psp-user
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+IN PROGRESS SECTION
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
 
-```bash
-psp-user apply -f yaml/pod-pause.yaml
-psp-user get pods
-psp-user delete po/pod-pause
-```
-
-Remember before the role was bound, creating the pod failed. Now, the container will start but pause. If you look at the logs before deletion, you'll see this:
-
-```bash
-$ psp-admin logs pod-pause
-Error from server (BadRequest): container "pause" in pod "pod-pause" is waiting to start: CreateContainerConfigError
-```
-
-*NOTE*: You might see internet articles that use "psp-admin ... --verb=use" instead of the YAML used above. That command won't work. See https://github.com/kubernetes/kubernetes/issues/85314 for more information.
 
 ## Fail To Create a Privileged Pod
 
 ```bash
-cat <<EOF > yaml/privileged_pod.yaml
-apiVersion: v1 
-kind: Pod 
-metadata:   
-    name: privileged 
-spec:   
-    containers:
-    - name:  pause
-      image: k8s.gcr.io/pause
-      securityContext:
-        privileged: true
+POD_NAME="bash-shell-$(uuid | cut -b-5)"
+
+kuser apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: $POD_NAME
+  namespace: psp-ns
+spec:
+  containers:
+  - name: $POD_NAME
+    image: centos
+    command: ["/bin/bash"]
+    args: ["-c", "while true; do date; sleep 5; done"]
+    securityContext:
+      privileged: true
 EOF
-psp-user apply -f yaml/privileged_pod.yaml
+
+# Press ^C when pod is ready.
+kuser get pod $POD_NAME -w
+
+# This fails.
+kuser exec -it $POD_NAME -- /bin/bash
+
+# This works.
+kadmin exec -it $POD_NAME -- /bin/bash
+
+kuser delete pod $POD_NAME
 ```
 
 You should see the error "Privileged containers are not allowed".
+
+
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+
+
+
+
+
+
 
 ## Fail To Create an Unprivileged Deployment
 
@@ -455,4 +689,11 @@ spec:
   volumes:
   - emptyDir
   - secret
+```
+
+
+# Cleanup
+
+```
+$HOME/bin/kubectl delete namespace psp-ns
 ```

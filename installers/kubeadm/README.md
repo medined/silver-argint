@@ -69,6 +69,7 @@ journalctl -b
 systemctl status kubelet
 journalctl -xeu kubelet
 journalctl -u kubelet.service
+journalctl -f -u kubelet.service
 ```
 
 * List all Kubernetes containers running in docker.

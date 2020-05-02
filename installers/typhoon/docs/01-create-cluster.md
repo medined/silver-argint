@@ -70,6 +70,14 @@ EOF
 
 ```bash
 cat <<EOF > tempest.tf
+locals {
+  ssh_authorized_key = "ssh-rsa ..."
+}
+
+output "ssh_authorized_key" {
+  value = "${local.ssh_authorized_key}"
+}
+
 module "tempest" {
   source = "git::https://github.com/poseidon/typhoon//aws/fedora-coreos/kubernetes?ref=v1.18.1"
 
@@ -79,7 +87,7 @@ module "tempest" {
   dns_zone_id  = "Z05543821H7X7WYIBGOOC"
 
   # configuration
-  ssh_authorized_key = "$PKI_PUBLIC_KEY"
+  ssh_authorized_key = "${local.ssh_authorized_key}"
 
   # optional
   worker_count = 2
@@ -120,15 +128,50 @@ terraform apply
 
 * Export `KUBECONFIG` so that `kubectl` knows how to connect. Another great command to add to your `$HOME/.bashrc` file.
 
-```
+```bash
 export KUBECONFIG=$HOME/.kube/configs/tempest-config
+```
+
+* View nodes. Notice that the ROLES column is empty.
+
+```bash
+$HOME/bin/kubectl get nodes
+```
+
+* Assign roles to your nodes that you'll see in the `get nodes` command.
+
+```bash
+$HOME/bin/kubectl label nodes --selector=node.kubernetes.io/master= node-role.kubernetes.io/master=true
+
+$HOME/bin/kubectl label nodes --selector=node.kubernetes.io/node= node-role.kubernetes.io/worker=true
 ```
 
 * View pods.
 
+```bash
+$HOME/bin/kubectl get pods --all-namespaces
 ```
-kubectl get pods --all-namespaces
+
+* Find the public IP of the master (AKA controller) node, then SSH to it.
+
+```bash
+PKI_PEM=/home/medined/Downloads/pem/david-va-oit-cloud-k8s.pem
+PUBLIC_IP=3.235.132.234
+ssh -i $PKI_PEM core@$PUBLIC_IP
 ```
+
+* Change to the super user.
+
+```bash
+sudo su -
+```
+
+* Add the following as one of the parameters to the `kube-apiserver` command. As soon as you save the file, the `apiserver` pod will be restarted. This will cause connection errors because the api server stops responding. This is normal. Wait a few minutes and the pod will restart and start responds to requests.
+
+```
+--enable-admission-plugins=AlwaysPullImages,LimitRanger,TaintNodesByCondition,DefaultTolerationSeconds,DefaultStorageClass,StorageObjectInUseProtection,PersistentVolumeClaimResize,CertificateApproval,CertificateSigning,CertificateSubjectRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,NamespaceLifecycle,ServiceAccount,Priority,RuntimeClass,ResourceQuota
+```
+
 
 ## A Note About Unhealthy Instances
 
