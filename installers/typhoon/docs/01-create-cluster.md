@@ -152,6 +152,183 @@ $HOME/bin/kubectl label nodes --selector=node.kubernetes.io/node= node-role.kube
 $HOME/bin/kubectl get pods --all-namespaces
 ```
 
+## Add Initial Pod Security Policies
+
+Learning about pod security policies is a big topic. We won't cover it here other than to say that before turning the PodSecurityPolicy admission controller, pod security policies need to be in place so that pods in the kube-system namespace can start. That's what the following command does, it provides a bare minimum set of policies needed to start the apiserver pod.
+
+Note that the restricted clusterrole as *zero* rules. If you want normal users to perform commands, you'll need to explicitly create rules.
+
+A summary of the `restricted` PSP.
+
+* Enable read-only root filesystem
+* Enable security profiles
+* Prevent host network access
+* Prevent privileged mode
+* Prevent root privileges
+* Whitelist read-only host path
+* Whitelist volume types
+
+Some things to remember.
+
+* Don’t write data to your pod unless it is setup with an emptyVolume mount
+* Cluster-wide permissions should generally be avoided in favor of namespace-specific permissions.
+
+
+```bash
+$HOME/bin/kubectl apply -f - <<EOF
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: privileged
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: "*"
+  labels:
+    addonmanager.kubernetes.io/mode: EnsureExists
+spec:
+  privileged: true
+  allowPrivilegeEscalation: true
+  allowedCapabilities: ['*']
+  volumes: ['*']
+  hostNetwork: true
+  hostIPC:     true
+  hostPID:     true
+  hostPorts: [{ min: 0, max: 65535 }]
+  runAsUser:          { rule: RunAsAny }
+  seLinux:            { rule: RunAsAny }
+  supplementalGroups: { rule: RunAsAny }
+  fsGroup:            { rule: RunAsAny }
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: restricted
+  labels:
+    addonmanager.kubernetes.io/mode: EnsureExists
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'docker/default,runtime/default'
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName:  'runtime/default'
+    apparmor.security.beta.kubernetes.io/defaultProfileName:  'runtime/default'
+spec:
+  # Restrict pods to just a /pod directory and ensure that it is read-only.
+  allowedHostPaths:
+    - pathPrefix: /pod
+      readOnly: true 
+
+  privileged: false
+  allowPrivilegeEscalation: false
+  # This is redundant with non-root + disallow privilege escalation, but we can provide it for defense in depth.
+  requiredDropCapabilities: [ALL]
+  readOnlyRootFilesystem: true
+
+  hostNetwork: false
+  hostIPC:     false
+  hostPID:     false
+
+  runAsUser:
+    # Require the container to run without root privileges.
+    rule: MustRunAsNonRoot
+
+  seLinux:
+    # Assume nodes are using AppArmor rather than SELinux.
+    rule: RunAsAny
+
+  # Forbid adding the root group.
+  supplementalGroups:
+    rule: MustRunAs
+    ranges: [{ min: 1, max: 65535 }]
+
+  # Forbid adding the root group.
+  fsGroup:
+    rule: MustRunAs
+    ranges: [{ min: 1, max: 65535 }]
+
+  # Allow core volume types. Assume that persistentVolumes set up by the cluster admin are safe to use.
+  volumes:
+    - configMap
+    - downwardAPI
+    - emptyDir
+    - persistentVolumeClaim
+    - projected
+    - secret
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: psp:privileged
+  labels:
+    addonmanager.kubernetes.io/mode: EnsureExists
+rules:
+- apiGroups: ['extensions']
+  resources: ['podsecuritypolicies']
+  verbs:     ['use']
+  resourceNames:
+  - privileged
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: psp:restricted
+  labels:
+    addonmanager.kubernetes.io/mode: EnsureExists
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: default:restricted
+  labels:
+    addonmanager.kubernetes.io/mode: EnsureExists
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind:     ClusterRole
+  name:     psp:restricted
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind:     Group
+  name:     system:authenticated
+- apiGroup: rbac.authorization.k8s.io
+  kind:     Group
+  name:     system:serviceaccounts
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: default:privileged
+  namespace: kube-system
+  labels:
+    addonmanager.kubernetes.io/mode: EnsureExists
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind:     ClusterRole
+  name:     psp:privileged
+subjects:
+- kind:     Group
+  name:     system:masters
+  apiGroup: rbac.authorization.k8s.io
+- kind:     Group
+  name:     system:nodes
+  apiGroup: rbac.authorization.k8s.io
+- kind:     Group
+  name:     system:serviceaccounts:kube-system
+  apiGroup: rbac.authorization.k8s.io
+EOF
+```
+
+## ClusterRole Suggestions
+
+The `psp:restricted` cluster role can't do anthing. Consider creating a `psp:developers` role that has permissions within specific namespaces.
+
+* Ability To List Secrets
+
+```
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["list"]
+```
+
+## Enabling Admission Controllers
+
 * Find the public IP of the master (AKA controller) node, then SSH to it.
 
 ```bash
@@ -169,9 +346,8 @@ sudo su -
 * Add the following as one of the parameters to the `kube-apiserver` command. As soon as you save the file, the `apiserver` pod will be restarted. This will cause connection errors because the api server stops responding. This is normal. Wait a few minutes and the pod will restart and start responds to requests.
 
 ```
---enable-admission-plugins=AlwaysPullImages,LimitRanger,TaintNodesByCondition,DefaultTolerationSeconds,DefaultStorageClass,StorageObjectInUseProtection,PersistentVolumeClaimResize,CertificateApproval,CertificateSigning,CertificateSubjectRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,NamespaceLifecycle,ServiceAccount,Priority,RuntimeClass,ResourceQuota
+--enable-admission-plugins=AlwaysPullImages,LimitRanger,TaintNodesByCondition,DefaultTolerationSeconds,DefaultStorageClass,StorageObjectInUseProtection,PersistentVolumeClaimResize,CertificateApproval,CertificateSigning,CertificateSubjectRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,NamespaceLifecycle,ServiceAccount,Priority,RuntimeClass,ResourceQuota,PodSecurityPolicy
 ```
-
 
 ## A Note About Unhealthy Instances
 
