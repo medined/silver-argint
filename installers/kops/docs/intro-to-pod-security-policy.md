@@ -249,7 +249,7 @@ subjects:
 EOF
 ```
 
-* With the new role and role binding, `kuser` can now start a pod. Notice that the user and group need to be specified. If not you will see a current state of "waiting: container has runAsNonRoot and image will run as root". The pod starts but you can't exec into it.
+* With the new role and role binding, `kuser` can now start a pod. Notice that the user and group need to be specified. If not you will see a current state of "waiting: container has runAsNonRoot and image will run as root". The pod starts but you can't exec into it. Leave the pod running for now.
 
 ```bash
 kuser apply -f - <<EOF
@@ -271,7 +271,6 @@ spec:
 EOF
 
 kuser get pod -w
-kuser delete pod able-to-launch
 ```
 
 * Trying to create a privleged pod fails. You should see the error "Privileged containers are not allowed".
@@ -298,13 +297,13 @@ EOF
 
 ## Allowing EXEC into a container
 
-After starting the `able-to-launch` pod from earlier, trying to use `exec` fails.
+Currently, trying to use `exec` fails with the `able-to-launch` pod.
 
 ```bash
-kuser exec able-to-launch -- /bin/bash
-kuser delete pod able-to-launch
-
+kuser exec -it able-to-launch -- /bin/bash
 ```
+
+Create a role just to enable the exec command.
 
 ```bash
 kubectl apply -f - <<EOF
@@ -334,6 +333,11 @@ subjects:
 EOF
 ```
 
+Now try the exec command again. It will work this time.
+
+```bash
+kuser delete pod able-to-launch
+```
 
 
 ## Compliance Check
