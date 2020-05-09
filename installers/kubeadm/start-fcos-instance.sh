@@ -32,7 +32,7 @@ if [ $? != 0 ]; then
   exit
 fi
 
-PKI_PUBLIC_PEM=$HOME/.ssh/david-va-oit-cloud-k8s.pem
+PKI_PRIVATE_PEM=$HOME/.ssh/david-va-oit-cloud-k8s.pem
 PKI_PUBLIC_PUB=$HOME/.ssh/david-va-oit-cloud-k8s.pub
 SSH_USER=core
 
@@ -40,7 +40,7 @@ SSH_USER=core
 if [ -f $PKI_PUBLIC_PUB ]; then
     echo "local kops public key: Exists - $PKI_PUBLIC_PUB"
 else
-    ssh-keygen -y -f $PKI_PUBLIC_PEM > $PKI_PUBLIC_PUB
+    ssh-keygen -y -f $PKI_PRIVATE_PEM > $PKI_PUBLIC_PUB
     echo "local kops public key: Created - $PKI_PUBLIC_PUB"
 fi
 
@@ -144,7 +144,7 @@ ssh-keyscan -H $PUBLIC_IP >> ~/.ssh/known_hosts 2>/dev/null
 
 echo "install packages."
 ssh -t \
-  -i $PKI_PUBLIC_PEM \
+  -i $PKI_PRIVATE_PEM \
   $SSH_USER@$PUBLIC_IP \
   "sudo rpm-ostree install audit conntrack ethtool python libselinux-python3 setools setroubleshoot udica"
 
@@ -153,7 +153,7 @@ aws ec2 reboot-instances --instance-ids $INSTANCE_ID --region $AWS_REGION
 echo "waiting for reboot command to process"
 sleep 10
 
-./test-ssh.sh $PUBLIC_IP $PKI_PUBLIC_PEM $SSH_USER
+./test-ssh.sh $PUBLIC_IP $PKI_PRIVATE_PEM $SSH_USER
 
 echo "create inventory."
 cat <<EOF >inventory
@@ -164,7 +164,7 @@ EOF
 echo "run playbook."
 python3 $(which ansible-playbook) \
     -i inventory \
-    --private-key $PKI_PUBLIC_PEM \
+    --private-key $PKI_PRIVATE_PEM \
     -u $SSH_USER \
     main.playbook.yml
 
@@ -172,11 +172,11 @@ echo "display variables."
 cat <<EOF
 AWS_REGION=$AWS_REGION
 INSTANCE_ID=$INSTANCE_ID
-PKI_PUBLIC_PEM=$PKI_PUBLIC_PEM
+PKI_PRIVATE_PEM=$PKI_PRIVATE_PEM
 PUBLIC_IP=$PUBLIC_IP
 SSH_USER=$SSH_USER
 EOF
 
 echo
-echo "ssh -i $PKI_PUBLIC_PEM $SSH_USER@$PUBLIC_IP"
+echo "ssh -i $PKI_PRIVATE_PEM $SSH_USER@$PUBLIC_IP"
 echo

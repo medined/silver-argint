@@ -135,6 +135,7 @@ kuser get pods
 
 * Create a role and a role binding to allow working with pods. Keep in mind that roles serve a different purpose that pod security polices. For example, with this role the service account can't list deployments or even service accounts so it can't see itself. Remember that these are namespace-specific.
 
+
 ```bash
 kubectl apply -f - <<EOF
 ---
@@ -187,7 +188,7 @@ $HOME/bin/kubectl get ClusterRoles | grep "^psp"
 $HOME/bin/kubectl --namespace psp-ns get roles
 ```
 
-* `kuser` can pods.
+* `kuser` can get pod information.
 
 ```bash
 kuser get pods
@@ -203,22 +204,12 @@ metadata:
   name: unable-to-launch
 spec:
   containers:
-  - name: $POD_NAME
-    image: centos
+  - name: unable-to-launch
+    image: registry.access.redhat.com/ubi8/ubi
 EOF
 ```
 
-* Update the `psp-sa-role` 
-
-* The follow may not be needed in the 
-psp-sa-allow-restricted-psp-role role.
-
-```
-- apiGroups:      [extensions]
-  resources:      [podsecuritypolicies]
-  verbs:          [use]
-  resourceNames:  [restricted]
-```
+* Create a new role that permits using the `restricted` pod security policy.
 
 ```bash
 kubectl apply -f - <<EOF
@@ -260,7 +251,7 @@ metadata:
 spec:
   containers:
   - name: able-to-launch
-    image: centos
+    image: unable-to-launch
     command: ["/bin/bash"]
     args: ["-c", "while true; do date; sleep 5; done"]
     securityContext:
@@ -284,7 +275,7 @@ metadata:
 spec:
   containers:
   - name: i-have-privilege
-    image: centos
+    image: registry.access.redhat.com/ubi8/ubi
     command: ["/bin/bash"]
     args: ["-c", "while true; do date; sleep 5; done"]
     securityContext:
@@ -338,6 +329,157 @@ Now try the exec command again. It will work this time.
 ```bash
 kuser delete pod able-to-launch
 ```
+
+## Allowing NET_RAW Capability
+
+For this demonstration, we need to switch to a `centos` image because the `ubi` image does not have the `ping` command.
+
+```bash
+kuser apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: i-have-ping-cmd
+spec:
+  containers:
+  - name: i-have-ping-cmd
+    image: centos
+    command: ["/bin/bash"]
+    args: ["-c", "while true; do date; sleep 5; done"]
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+  dnsPolicy: Default
+  restartPolicy: Never
+EOF
+```
+
+kuser exec -it i-have-ping-cmd -- ping -c 3 4.2.2.2
+This fails.
+
+```bash
+$HOME/bin/kubectl apply -f - <<EOF
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: allow-ping
+  labels:
+    addonmanager.kubernetes.io/mode: EnsureExists
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'docker/default,runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName:  'runtime/default'
+spec:
+  # Instead of dropping all capabilities, this policy whitelists one.
+  allowedCapabilities: [NET_RAW]
+
+  # Restrict pods to just a /pod directory and ensure that it is read-only.
+  allowedHostPaths:
+    - pathPrefix: /pod
+      readOnly: true 
+
+  privileged: false
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+
+  hostNetwork: false
+  hostIPC:     false
+  hostPID:     false
+
+  runAsUser:
+    # Require the container to run without root privileges.
+    rule: MustRunAsNonRoot
+
+  seLinux:
+    # Assume nodes are using AppArmor rather than SELinux.
+    rule: RunAsAny
+
+  # Forbid adding the root group.
+  supplementalGroups:
+    rule: MustRunAs
+    ranges: [{ min: 1, max: 65535 }]
+
+  # Forbid adding the root group.
+  fsGroup:
+    rule: MustRunAs
+    ranges: [{ min: 1, max: 65535 }]
+
+  # Allow core volume types. Assume that persistentVolumes set up by the cluster admin are safe to use.
+  volumes:
+    - configMap
+    - downwardAPI
+    - emptyDir
+    - persistentVolumeClaim
+    - projected
+    - secret
+EOF
+```
+
+Use kadmin to get the correct namespace.
+
+```bash
+kadmin apply -f - <<EOF
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: psp:allow-ping-role
+  labels:
+    addonmanager.kubernetes.io/mode: EnsureExists
+rules:
+- apiGroups: ['extensions']
+  resources: ['podsecuritypolicies']
+  verbs:     ['use']
+  resourceNames:
+  - allow-ping
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: psp:allow-ping-role-binding
+  labels:
+    addonmanager.kubernetes.io/mode: EnsureExists
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind:     Role
+  name:     psp:allow-ping-role
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind:     Group
+  name:     system:serviceaccounts:psp-ns:psp-sa
+EOF
+```
+
+kuser auth can-i use psp/psp:allow-ping
+
+capsh --print
+
+kuser apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: i-have-ping-cmd
+spec:
+  containers:
+  - name: i-have-ping-cmd
+    image: centos
+    command: ["/bin/bash"]
+    args: ["-c", "while true; do date; sleep 5; done"]
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+  dnsPolicy: Default
+  restartPolicy: Never
+EOF
+
+Pod Security Policies stay with the pod regardless who accesses it. If an admin user creates a pod with all capabilites which is then exec'ed  into by a service account. All capabilites are available to the service account.
+
+kadmin get pod i-have-ping-cmd -o jsonpath='{.metadata.annotations.kubernetes\.io/psp}';echo
+kuser get pod i-have-ping-cmd -o jsonpath='{.metadata.annotations.kubernetes\.io/psp}';echo
+
+kadmin exec -it i-have-ping-cmd -- ping -c 3 4.2.2.2
+kuser exec -it i-have-ping-cmd -- ping -c 3 4.2.2.2
+
 
 
 ## Compliance Check

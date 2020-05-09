@@ -1,16 +1,15 @@
 # Deploy Service With HTTPS
 
-* Deploy text-reponder with HTTP.
+This document first installs cert-manager, then updates the text-responder service so that it can use https.
 
-```
-kubectl delete namespace text-responder
-./scripts/deploy-namespace-text-responder.sh
-```
+## Manual Process
+
+### Install cert-manager
 
 * Create a namespace for `cert-manager`.
 
 ```bash
-kubectl apply -f - <<EOF
+$HOME/bin/kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -20,24 +19,23 @@ metadata:
 EOF
 ```
 
-* Install the custom resource definitions.
-
-```bash
-kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.crds.yaml
-```
-
 * Install certificate manager. Check the chart versions at https://hub.helm.sh/charts/jetstack/cert-manager to find the latest version number.
 
-```
+```bash
 helm repo add jetstack https://charts.jetstack.io
-helm install cert-manager jetstack/cert-manager --version v0.14.2 --namespace cert-manager
+helm install cert-manager jetstack/cert-manager --version v0.15.0 --namespace cert-manager --set installCRDs=true
+```
+
+* Check that the pods started.
+
+```bash
+$HOME/bin/kubectl get pods --namespace cert-manager
 ```
 
 * Create an issuer to test the webhook works okay.
 
-
 ```bash
-kubectl apply -f - <<EOF
+$HOME/bin/kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -77,12 +75,14 @@ kubectl describe certificate -n cert-manager-test
 kubectl delete namespace cert-manager-test
 ```
 
+### Create Issuers
+
 * Create Let's Encrypt ClusterIssuer for staging and production environments. The main difference is the ACME server URL. I use the term `staging` because that is what Let's Encrypt uses.
 
 >Change the email address.
 
 ```bash
-kubectl apply -f - <<EOF
+$HOME/bin/kubectl apply -f - <<EOF
 apiVersion: cert-manager.io/v1alpha2
 kind: ClusterIssuer
 metadata:
@@ -118,13 +118,52 @@ EOF
 * Check on the status of the development issuer. The entries should be ready.
 
 ```
-kubectl get clusterissuer
+$HOME/bin/kubectl get clusterissuer
 ```
+
+### Update RBAC
+
+The cert-manager service account has no permission to use Pod Security Policies. Therfore, it can't create the solver pod needed to create certificates. The following manifest allows cert-manager to issue certificates for a single namespace.
+
+```bash
+kubectl apply -f - <<EOF
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cert-manager-in-text-responder-namespace-role
+  namespace: text-responder
+rules:
+  - apiGroups: ['']
+    resources: [pods]
+    verbs:     [get, list, watch, create, update, patch, delete]
+  - apiGroups:      [policy]
+    resources:      [podsecuritypolicies]
+    resourceNames:  [restricted]
+    verbs:          [use]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cert-manager-in-text-responder-namespace-role-binding
+  namespace: text-responder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind:     Role
+  name:     cert-manager-in-text-responder-namespace-role
+subjects:
+  - kind: ServiceAccount
+    namespace: cert-manager
+    name: cert-manager
+EOF
+```
+
+### Update text-responder.
 
 * Add annotation to text-responder ingress. This uses the staging Let's Encrypt to avoid rate limited while testing.
 
 ```bash
-kubectl apply -f - <<EOF
+$HOME/bin/kubectl apply -f - <<EOF
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
@@ -152,20 +191,19 @@ EOF
 * Review the certificate that cert-manager has created. 
 
 ```bash
-kubectl -n text-responder describe certificate text-responder-tls
+$HOME/bin/kubectl --namespace text-responder describe certificate text-responder-tls
 ```
 
 * Review the secret that is being created by cert-manager.
 
 ```bash
-kubectl -n text-responder describe secret text-responder-tls
+$HOME/bin/kubectl --namespace text-responder describe secret text-responder-tls
 ```
-
 
 * Add annotation to text-responder ingress.
 
 ```bash
-kubectl apply -f - <<EOF
+$HOME/bin/kubectl apply -f - <<EOF
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
@@ -193,7 +231,7 @@ EOF
 * Delete secret to get new certificate.
 
 ```
-k -n text-responder delete secret text-responder-tls
+$HOME/bin/kubectl --namespace text-responder delete secret text-responder-tls
 ```
 
 * At this point, an HTTPS request should work.

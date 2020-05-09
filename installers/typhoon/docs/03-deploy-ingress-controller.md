@@ -15,7 +15,7 @@ The NGINX Ingress Controller for Kubernetes provides enterprise‑grade delivery
 All resources for the ingress-controller are created using manifests which makes the installation process just one line.
 
 ```bash
-kubectl apply -R -f ingress-controller
+$HOME/bin/kubectl apply -R -f ingress-controller
 ```
 
 There are some things to note about the manifests.

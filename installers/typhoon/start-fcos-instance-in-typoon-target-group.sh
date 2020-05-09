@@ -14,7 +14,7 @@ SECURITY_GROUP_ID="sg-003bc1ae0f21e24b8"  # tempest-worker
 SUBNET_ID="subnet-0e9037577a97a484a"
 
 
-PKI_PUBLIC_PEM=/$HOME/.ssh/david-va-oit-cloud-k8s.pem
+PKI_PRIVATE_PEM=/$HOME/.ssh/david-va-oit-cloud-k8s.pem
 PKI_PUBLIC_PUB=/$HOME/.ssh/david-va-oit-cloud-k8s.pub
 SSH_USER=core
 
@@ -173,12 +173,12 @@ aws elbv2 register-targets \
   --target-group-arn $TARGET_GROUP_ARN \
   --targets Id=$INSTANCE_ID
 
-# ssh -t -i $PKI_PUBLIC_PEM $SSH_USER@$PUBLIC_IP "sudo rpm-ostree install python libselinux-python3"
+# ssh -t -i $PKI_PRIVATE_PEM $SSH_USER@$PUBLIC_IP "sudo rpm-ostree install python libselinux-python3"
 
 # aws ec2 reboot-instances --instance-ids $INSTANCE_ID --region $AWS_REGION
-# ./test-ssh.sh $PUBLIC_IP $PKI_PUBLIC_PEM $SSH_USER
+# ./test-ssh.sh $PUBLIC_IP $PKI_PRIVATE_PEM $SSH_USER
 
-echo "ssh -i $PKI_PUBLIC_PEM $SSH_USER@$PUBLIC_IP"
+echo "ssh -i $PKI_PRIVATE_PEM $SSH_USER@$PUBLIC_IP"
 
 # cat <<EOF >inventory
 # [fcos]
@@ -187,7 +187,7 @@ echo "ssh -i $PKI_PUBLIC_PEM $SSH_USER@$PUBLIC_IP"
 
 # python3 $(which ansible-playbook) \
 #     -i inventory \
-#     --private-key $PKI_PUBLIC_PEM \
+#     --private-key $PKI_PRIVATE_PEM \
 #     -u $SSH_USER \
 #     main.playbook.yml
 
@@ -222,7 +222,7 @@ done
 cat <<EOF
 AWS_REGION=$AWS_REGION
 INSTANCE_ID=$INSTANCE_ID
-PKI_PUBLIC_PEM=$PKI_PUBLIC_PEM
+PKI_PRIVATE_PEM=$PKI_PRIVATE_PEM
 PUBLIC_IP=$PUBLIC_IP
 SSH_USER=$SSH_USER
 TARGET_GROUP_ARN=$TARGET_GROUP_ARN

@@ -120,7 +120,7 @@ terraform init
 terraform plan
 ```
 
-* Create the cluster.
+* Create the cluster. This can take up to ten minutes, please be patient.
 
 ```bash
 terraform apply
@@ -132,13 +132,13 @@ terraform apply
 export KUBECONFIG=$HOME/.kube/configs/tempest-config
 ```
 
-* View nodes. Notice that the ROLES column is empty.
+* View nodes. Notice that the ROLES column is empty. If a worker node is not ready, it is OK to terminate it. A few minutes later, a new node will be provisioned.
 
 ```bash
 $HOME/bin/kubectl get nodes
 ```
 
-* Assign roles to your nodes that you'll see in the `get nodes` command.
+* Assign roles to your nodes that you'll see in the `get nodes` command. You can re-run this command if the nodes change.
 
 ```bash
 $HOME/bin/kubectl label nodes --selector=node.kubernetes.io/master= node-role.kubernetes.io/master=true
@@ -207,9 +207,7 @@ metadata:
     addonmanager.kubernetes.io/mode: EnsureExists
   annotations:
     seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'docker/default,runtime/default'
-    apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
     seccomp.security.alpha.kubernetes.io/defaultProfileName:  'runtime/default'
-    apparmor.security.beta.kubernetes.io/defaultProfileName:  'runtime/default'
 spec:
   # Restrict pods to just a /pod directory and ensure that it is read-only.
   allowedHostPaths:
@@ -303,15 +301,15 @@ roleRef:
   kind:     ClusterRole
   name:     psp:privileged
 subjects:
-- kind:     Group
+- apiGroup: rbac.authorization.k8s.io
+  kind:     Group
   name:     system:masters
-  apiGroup: rbac.authorization.k8s.io
-- kind:     Group
+- apiGroup: rbac.authorization.k8s.io
+  kind:     Group
   name:     system:nodes
-  apiGroup: rbac.authorization.k8s.io
-- kind:     Group
+- apiGroup: rbac.authorization.k8s.io
+  kind:     Group
   name:     system:serviceaccounts:kube-system
-  apiGroup: rbac.authorization.k8s.io
 EOF
 ```
 
@@ -333,7 +331,7 @@ The `psp:restricted` cluster role can't do anthing. Consider creating a `psp:dev
 
 ```bash
 PKI_PEM=/home/medined/Downloads/pem/david-va-oit-cloud-k8s.pem
-PUBLIC_IP=3.235.132.234
+PUBLIC_IP=3.231.25.94
 ssh -i $PKI_PEM core@$PUBLIC_IP
 ```
 
@@ -343,7 +341,7 @@ ssh -i $PKI_PEM core@$PUBLIC_IP
 sudo su -
 ```
 
-* Add the following as one of the parameters to the `kube-apiserver` command. As soon as you save the file, the `apiserver` pod will be restarted. This will cause connection errors because the api server stops responding. This is normal. Wait a few minutes and the pod will restart and start responds to requests.
+* Edit /etc/kubernetes/manifests/kube-apiserver.yaml by adding the following as one of the parameters to the `kube-apiserver` command. As soon as you save the file, the `apiserver` pod will be restarted. This will cause connection errors because the api server stops responding. This is normal. Wait a few minutes and the pod will restart and start responds to requests. Check the command using `octant` or another technique. If you don't see the admission controllers in the command, resave the file to restart the pod.
 
 ```
 --enable-admission-plugins=AlwaysPullImages,LimitRanger,TaintNodesByCondition,DefaultTolerationSeconds,DefaultStorageClass,StorageObjectInUseProtection,PersistentVolumeClaimResize,CertificateApproval,CertificateSigning,CertificateSubjectRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,NamespaceLifecycle,ServiceAccount,Priority,RuntimeClass,ResourceQuota,PodSecurityPolicy
