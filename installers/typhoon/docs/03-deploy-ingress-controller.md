@@ -15,12 +15,12 @@ The NGINX Ingress Controller for Kubernetes provides enterprise‑grade delivery
 All resources for the ingress-controller are created using manifests which makes the installation process just one line.
 
 ```bash
-$HOME/bin/kubectl apply -R -f ingress-controller
+kubectl apply -R -f ingress-controller
 ```
 
 There are some things to note about the manifests.
 
->The `nginx-ingress-controller-deployment` deployment pulls v0.30.0 of its image. Check https://quay.io/repository/kubernetes-ingress-controller/nginx-ingress-controller?tab=tags for the latest `nginx-ingress-controller` tag.
+>The `nginx-ingress-controller-deployment` deployment pulls v0.32.0 of its image. Check https://quay.io/repository/kubernetes-ingress-controller/nginx-ingress-controller?tab=tags for the latest `nginx-ingress-controller` tag.
 
 >The `nginx-ingress-controller-deployment` should respond to :10254/healthz to make the target group health check happy.
 

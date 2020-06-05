@@ -49,7 +49,6 @@ Typhoon distributes upstream Kubernetes, architectural conventions, and cluster 
 -----------------------------------------------------------------
 
 ```bash
-curl -o $HOME/bin/stern -L https://github.com/wercker/stern/releases/download/1.11.0/stern_linux_amd64
-chmod +x $HOME/bin/stern
+curl -o stern -L https://github.com/wercker/stern/releases/download/1.11.0/stern_linux_amd64
+chmod +x stern
 ```
-

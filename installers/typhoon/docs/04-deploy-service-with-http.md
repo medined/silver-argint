@@ -11,7 +11,7 @@ export TEXT_RESPONDER_HOST="text-responder.david.va-oit.cloud"
 * Create a namespace.
 
 ```bash
-$HOME/bin/kubectl apply -f - <<EOF
+kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -24,17 +24,17 @@ EOF
 * Set the `kubectl` context so that `text-responder` is the current namespace. Undo this action by using `default` as the namespace.
 
 ```bash
-$HOME/bin/kubectl config set-context --current --namespace=text-responder
+kubectl config set-context --current --namespace=text-responder
 ```
 
 ## Deploy text-responder Application
 
 The service being deployed just returns "silverargint" as a text response. Its simplicity makes it a great for this kind of preliminary exploration.
 
-* Deploy a small web server that returns a text message. 
+* Deploy a small web server that returns a text message.
 
 ```bash
-$HOME/bin/kubectl apply -f - <<EOF
+kubectl apply -f - <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -85,7 +85,7 @@ service/text-responder
 * Check the service is running. You should see the `text-responder` service in the list.
 
 ```bash
-$HOME/bin/kubectl get service --namespace $NAMESPACE
+kubectl --namespace text-responder get service
 ```
 
 * Get the load balancer hostname assigned to your ingress service.
@@ -105,7 +105,7 @@ echo $K8S_HOSTNAME
 dig $TEXT_RESPONDER_HOST
 ```
 
-* Curl should get the default 404 response.
+* Curl should get the default 404 response. The HTTPS request should fail because the local issuer certificate can't be found.
 
 ```bash
 curl http://$TEXT_RESPONDER_HOST
@@ -118,7 +118,7 @@ curl https://$TEXT_RESPONDER_HOST
 * Route traffic directed at the `text-responder` subdomain within the cluster.
 
 ```bash
-$HOME/bin/kubectl apply -f - <<EOF
+kubectl apply -f - <<EOF
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:

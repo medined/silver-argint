@@ -10,9 +10,9 @@ if [ ! -f $SECRET_FILE ]; then
   uuid > $SECRET_FILE
 fi
 
-$HOME/bin/kubectl create namespace $NAMESPACE
-$HOME/bin/kubectl -n $NAMESPACE create configmap greek-gyro --from-literal=onions=no
-$HOME/bin/kubectl -n $NAMESPACE create secret generic bash-shell-secret --from-file=$SECRET_FILE
+kubectl create namespace $NAMESPACE
+kubectl -n $NAMESPACE create configmap greek-gyro --from-literal=onions=no
+kubectl -n $NAMESPACE create secret generic bash-shell-secret --from-file=$SECRET_FILE
 
 kubectl apply -f - <<EOF
 apiVersion: v1
@@ -64,24 +64,24 @@ echo "---------------------------------"
 echo "| Press ^C when pod is running. |"
 echo "---------------------------------"
 
-$HOME/bin/kubectl -n $NAMESPACE get pod $POD_NAME -w
+kubectl -n $NAMESPACE get pod $POD_NAME -w
 
 echo
 
 echo "| FILES"
 echo "|   /config/greek-gryo"
 echo "|   /config/bash-shell-secret/bash-shell-secret.txt"
-echo 
+echo
 echo "| ENVIRONMENT VARIABLES"
 echo "|   BASH_SHELL_SECRET"
 echo "|   NODE_NAME is availabe as an environment variable."
 echo "|   ONIONS is availabe as an environment variable."
-echo 
+echo
 
-$HOME/bin/kubectl -n $NAMESPACE exec -it $POD_NAME -- /bin/bash
-$HOME/bin/kubectl -n $NAMESPACE delete pod $POD_NAME
-$HOME/bin/kubectl -n $NAMESPACE delete configmap greek-gyro
-$HOME/bin/kubectl -n $NAMESPACE delete secret bash-shell-secret
-$HOME/bin/kubectl delete namespace $NAMESPACE
+kubectl -n $NAMESPACE exec -it $POD_NAME -- /bin/bash
+kubectl -n $NAMESPACE delete pod $POD_NAME
+kubectl -n $NAMESPACE delete configmap greek-gyro
+kubectl -n $NAMESPACE delete secret bash-shell-secret
+kubectl delete namespace $NAMESPACE
 
 rm -f $SECRET_FILE

@@ -1,6 +1,7 @@
 
 locals {
   ssh_authorized_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCM1j8+LRV9elXX2gcrEWh5HdRfZH5HxzMiFxtAqCgia6A1GllacLrv/CUwj3jocugCagl3u9aDVKQIoqDZ1JtFQ+itcH+6zQqx8sVLOu7Si40PpHSGlXjqJaUaNkFW7yU7vcW4TsBp/J6pzsXq9bbt2tB4bQVrPo3VjrsPcvVVda7s2M+Cv2b0I9zuvrbvUgzOMOnQWKNsBPuNoX4R61dKS/tk73JYBIUlRqqEJcHxTkdwFyKVZ3mssJRYYC5UipSVDoW7A5B0nXvlJo3zO3rp2Dl/pbWsvhb39dOiRh2thscHJotVzV4IJ4QHkvQ5UPwQau/OWi3AJwKU5B3k+Jwt"
+  cloud_provider = "aws"
 }
 
 output "ssh_authorized_key" {

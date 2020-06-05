@@ -43,7 +43,7 @@ export AWS_REGION=us-east-1
 * Define the public key that will be used to access the cluster using SSH. This should be the public key from an EC2 Key Pair.
 
 ```bash
-export PKI_PUBLIC_KEY=$(cat /$HOME/.ssh/david-va-oit-cloud-k8s.pub)
+export PKI_PUBLIC_KEY=$(cat $HOME/Downloads/pem/david-va-oit-cloud-k8s.pub)
 ```
 
 * Create a `providers.tf` file. Note that this file will be different for every DevSecOps person since it refers to a location in their home directory. It might not look different below, but the $HOME gets interpreted.
@@ -79,7 +79,7 @@ output "ssh_authorized_key" {
 }
 
 module "tempest" {
-  source = "git::https://github.com/poseidon/typhoon//aws/fedora-coreos/kubernetes?ref=v1.18.1"
+  source = "git::https://github.com/poseidon/typhoon//aws/fedora-coreos/kubernetes?ref=v1.18.3"
 
   # AWS
   cluster_name = "tempest"
@@ -105,7 +105,7 @@ EOF
 * Terraform uses ssh-agent to automate this step. Add your SSH private key to ssh-agent. This command can also be added to your `$HOME/.bashrc` file.
 
 ```bash
-ssh-add $HOME/.ssh/david-va-oit-cloud-k8s.pem
+ssh-add $HOME/Downloads/pem/david-va-oit-cloud-k8s.pem
 ```
 
 * Initialize `terraform`.
@@ -135,21 +135,20 @@ export KUBECONFIG=$HOME/.kube/configs/tempest-config
 * View nodes. Notice that the ROLES column is empty. If a worker node is not ready, it is OK to terminate it. A few minutes later, a new node will be provisioned.
 
 ```bash
-$HOME/bin/kubectl get nodes
+kubectl get nodes
 ```
 
 * Assign roles to your nodes that you'll see in the `get nodes` command. You can re-run this command if the nodes change.
 
 ```bash
-$HOME/bin/kubectl label nodes --selector=node.kubernetes.io/master= node-role.kubernetes.io/master=true
-
-$HOME/bin/kubectl label nodes --selector=node.kubernetes.io/node= node-role.kubernetes.io/worker=true
+kubectl label nodes --selector=node.kubernetes.io/master= node-role.kubernetes.io/master=true
+kubectl label nodes --selector=node.kubernetes.io/node= node-role.kubernetes.io/worker=true
 ```
 
 * View pods.
 
 ```bash
-$HOME/bin/kubectl get pods --all-namespaces
+kubectl get pods --all-namespaces
 ```
 
 ## Add Initial Pod Security Policies
@@ -175,7 +174,7 @@ Some things to remember.
 
 
 ```bash
-$HOME/bin/kubectl apply -f - <<EOF
+kubectl apply -f - <<EOF
 ---
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
@@ -212,7 +211,7 @@ spec:
   # Restrict pods to just a /pod directory and ensure that it is read-only.
   allowedHostPaths:
     - pathPrefix: /pod
-      readOnly: true 
+      readOnly: true
 
   privileged: false
   allowPrivilegeEscalation: false
@@ -330,9 +329,10 @@ The `psp:restricted` cluster role can't do anthing. Consider creating a `psp:dev
 * Find the public IP of the master (AKA controller) node, then SSH to it.
 
 ```bash
+CONTROLLER_IP=$(aws ec2 describe-instances --region $AWS_REGION --filters "Name=instance-state-name,Values=running" "Name=tag:Name,Values='tempest-controller-0'" --query 'Reservations[].Instances[].PublicIpAddress' --output text)
+
 PKI_PEM=/home/medined/Downloads/pem/david-va-oit-cloud-k8s.pem
-PUBLIC_IP=3.231.25.94
-ssh -i $PKI_PEM core@$PUBLIC_IP
+ssh -i $PKI_PEM core@$CONTROLLER_IP
 ```
 
 * Change to the super user.
@@ -345,6 +345,12 @@ sudo su -
 
 ```
 --enable-admission-plugins=AlwaysPullImages,LimitRanger,TaintNodesByCondition,DefaultTolerationSeconds,DefaultStorageClass,StorageObjectInUseProtection,PersistentVolumeClaimResize,CertificateApproval,CertificateSigning,CertificateSubjectRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,NamespaceLifecycle,ServiceAccount,Priority,RuntimeClass,ResourceQuota,PodSecurityPolicy
+```
+
+* You can run the following command to ensure that `kubelet` started properly.
+
+```bashrc
+systemctl status kubelet
 ```
 
 ## A Note About Unhealthy Instances
