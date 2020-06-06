@@ -21,11 +21,10 @@ CRICTL_VERSION="v1.17.0"
 mkdir -p /opt/bin
 curl -L "https://github.com/kubernetes-sigs/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" | tar -C /opt/bin -xz
 
-RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
-
 echo "Install kubeadm, kubelet, kubectl and add a kubelet systemd service"
 
 if [ ! -f /opt/bin/kubeadm ]; then
+    RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)"
     mkdir -p /opt/bin
     cd /opt/bin
     curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}

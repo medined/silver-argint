@@ -1,13 +1,35 @@
 #!/bin/bash
 
+type curl
+if [ $? != 0 ]; then
+  echo "Install curl."
+  exit
+fi
+
+type jq
+if [ $? != 0 ]; then
+  echo "Install jq."
+  exit
+fi
+
+
 JSON_URL="https://builds.coreos.fedoraproject.org/streams/stable.json"
-AMI=$(curl -s $JSON_URL | $HOME/bin/jq -r '.architectures.x86_64.images.aws.regions["us-east-1"].image')
+AMI=$(curl -s $JSON_URL | jq -r '.architectures.x86_64.images.aws.regions["us-east-1"].image')
 echo "AMI: $AMI"
 
 AWS_REGION="us-east-1"
 KEY_NAME="david-va-oit-cloud-k8s"
 SECURITY_GROUP_ID="sg-0a4ad278f69b3d617"  # allow-world-ssh
 SUBNET_ID="subnet-02c78f939d58e2320"
+PKI_PRIVATE_PEM=/home/medined/Downloads/pem/david-va-oit-cloud-k8s.pem
+PKI_PUBLIC_PUB=/home/medined/Downloads/pem/david-va-oit-cloud-k8s.pub
+SSM_BINARY_DIR=/data/projects/dva/amazon-ssm-agent/bin
+SSH_USER=core
+
+if [ ! -d $SSM_BINARY_DIR ]; then
+  echo "Missing directory: $SSM_BINARY_DIR"
+  exit
+fi
 
 # kubeadm needs at least two CPUs"
 INSTANCE_TYPE="t3.medium"
@@ -31,10 +53,6 @@ if [ $? != 0 ]; then
   echo "Missing subnet: $SUBNET_ID"
   exit
 fi
-
-PKI_PRIVATE_PEM=$HOME/.ssh/david-va-oit-cloud-k8s.pem
-PKI_PUBLIC_PUB=$HOME/.ssh/david-va-oit-cloud-k8s.pub
-SSH_USER=core
 
 # Create a public key from the pem file.
 if [ -f $PKI_PUBLIC_PUB ]; then
@@ -73,29 +91,6 @@ systemd:
       enabled: true
 EOF
 
-# Maybe kubelet provides the health check?
-# Apr 10 02:26:31 ip-172-20-32-53 kubelet[44235]: E0410 02:26:31.256115   44235 server.go:794] Starting healthz server failed: listen tcp 127.0.0.1:10248: bind: address already in use
-
-# - name: healthz.service
-#   enabled: true
-#   contents: |
-#     [Unit]
-#     Description=A health check service
-#     After=network-online.target
-#     Wants=network-online.target
-#     [Service]
-#     Type=forking
-#     KillMode=none
-#     Restart=on-failure
-#     RemainAfterExit=yes
-#     ExecStartPre=podman pull $IMAGE
-#     ExecStart=podman run -d --name healthz-server -e PORT=10248 -p 10248:10248 $IMAGE
-#     ExecStop=podman stop -t 10 healthz-server
-#     ExecStopPost=podman rm healthz-server
-#     [Install]
-#     WantedBy=multi-user.target
-
-
 echo "Pulling fcc compiler from quay.io."
 docker pull quay.io/coreos/fcct:release
 
@@ -119,7 +114,7 @@ INSTANCE_ID=$(aws ec2 run-instances \
   --region $AWS_REGION \
   --security-group-ids $SECURITY_GROUP_ID \
   --subnet-id $SUBNET_ID \
-  --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$INSTANCE_NAME}]" \
+  --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$INSTANCE_NAME},{Key=ssm-installed,Value=true}]" \
   --user-data file://example.ign \
   --query 'Instances[0].InstanceId' \
   --output text)
@@ -146,7 +141,7 @@ echo "install packages."
 ssh -t \
   -i $PKI_PRIVATE_PEM \
   $SSH_USER@$PUBLIC_IP \
-  "sudo rpm-ostree install audit conntrack ethtool python libselinux-python3 setools setroubleshoot udica"
+  "sudo rpm-ostree install audit conntrack ethtool golang libselinux-python3 make python setools setroubleshoot udica"
 
 echo "reboot instance."
 aws ec2 reboot-instances --instance-ids $INSTANCE_ID --region $AWS_REGION
@@ -163,6 +158,7 @@ EOF
 
 echo "run playbook."
 python3 $(which ansible-playbook) \
+    --extra-vars "ssm_binary_dir=$SSM_BINARY_DIR" \
     -i inventory \
     --private-key $PKI_PRIVATE_PEM \
     -u $SSH_USER \
