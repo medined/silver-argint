@@ -1,0 +1,127 @@
+---
+- hosts: fcos
+  gather_facts: false
+
+  vars:
+    ansible_python_interpreter: '/usr/bin/python3'
+
+  tasks:
+
+    - name: Disable service debug-shell
+      become: yes
+      systemd:
+        name: debug-shell.service
+        enabled: no
+        state: stopped
+        masked: yes
+      tags:
+        - service_debug-shell_disabled
+        - medium_severity
+        - disable_strategy
+        - low_complexity
+        - low_disruption
+        - no_reboot_needed
+        - CCE-82496-1
+        - NIST-800-171-3.4.5
+
+    - name: Get local hostname.
+      uri:
+        url: http://169.254.169.254/latest/meta-data/local-hostname
+        return_content: yes
+      register: localhostname
+
+  # - name: Set local hostname. Use hostnamectl to confirm static hostname.
+  #   become: yes
+  #   hostname:
+  #     name: "{{localhostname.content}}"
+
+
+  # Set KUBECONFIG to this file to access cluster via kubectl.
+  # - name: copy tempest kube configuration file.
+  #   copy:
+  #     src: /home/medined/.kube/configs/tempest-config
+  #     dest: tempest-config
+
+  # - name: Copy install script to remote server.
+  #   become: yes
+  #   copy:
+  #     src: kubeadm-installer.sh
+  #     dest: /usr/local/bin/kubeadm-installer.sh
+  #     mode: u=rx,g=rx,o-rwx
+
+  # - name: Run software installer script.
+  #   become: yes
+  #   command: /usr/local/bin/kubeadm-installer.sh
+
+  # - name: Create script to watch audit denial messages
+  #   become: yes
+  #   copy:
+  #     dest: /root/watch-audit-denial-messages.sh
+  #     content: |
+  #       tail -f /var/log/audit/audit.log | grep denied
+  #     mode: u=rx,g=rx,o=rx
+
+  #
+  # ##########
+  # # kubeadm, kubelet, kubectl
+  # ##########
+  #
+  # - name: Create writable directory for binaries
+  #   become: yes
+  #   file:
+  #     path: /opt/bin
+  #     state: directory
+  #
+  # - name: Add directory to path
+  #   become: yes
+  #   copy:
+  #     dest: /etc/profile.d/k8s-config.sh
+  #     content: |
+  #       export PATH=/opt/bin:$PATH
+  #
+  # - name: Download release version
+  #   get_url:
+  #     url: https://dl.k8s.io/release/stable.txt
+  #     dest: /tmp/kube_version.txt
+  #     forces: no
+  #
+  # - name: Load release version
+  #   slurp:
+  #     src: /tmp/kube_version.txt
+  #   register: kube_version
+  #
+  # - name: Decode release version
+  #   set_fact:
+  #     kube_version: "{{ kube_version.content | b64decode | trim }}"
+  #
+  # - debug:
+  #     var: kube_version
+  #
+  # - name: Download kubeadm
+  #   get_url:
+  #     url: "https://storage.googleapis.com/kubernetes-release/release/{{kube_version}}/bin/linux/amd64/kubeadm"
+  #     dest: /opt/bin/kubeadm
+  #     mode: 755
+  #     forces: no
+  #
+  # - name: Download kubelet
+  #   get_url:
+  #     url: "https://storage.googleapis.com/kubernetes-release/release/{{kube_version}}/bin/linux/amd64/kubelet"
+  #     dest: /opt/bin/kubelet
+  #     mode: 755
+  #     forces: no
+  #
+  # - name: Download kubectl
+  #   get_url:
+  #     url: "https://storage.googleapis.com/kubernetes-release/release/{{kube_version}}/bin/linux/amd64/kubectl"
+  #     dest: /opt/bin/kubectl
+  #     mode: 755
+  #     forces: no
+
+    # if [ ! -f /opt/bin/kubeadm ]; then
+#     RELEASE="$(curl -sSL )"
+#     mkdir -p /opt/bin
+#     cd /usr/local/bin
+#     curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
+#     chmod +x {kubeadm,kubelet,kubectl}
+# fi

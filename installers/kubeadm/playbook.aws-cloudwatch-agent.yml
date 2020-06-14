@@ -7,111 +7,6 @@
 
   tasks:
 
-  # Set KUBECONFIG to this file to access cluster via kubectl.
-  # - name: copy tempest kube configuration file.
-  #   copy:
-  #     src: /home/medined/.kube/configs/tempest-config
-  #     dest: tempest-config
-
-  # - name: Copy install script to remote server.
-  #   become: yes
-  #   copy:
-  #     src: kubeadm-installer.sh
-  #     dest: /usr/local/bin/kubeadm-installer.sh
-  #     mode: u=rx,g=rx,o-rwx
-
-  # - name: Run software installer script.
-  #   become: yes
-  #   command: /usr/local/bin/kubeadm-installer.sh
-
-  # - name: Create bash configuration for kubernetes
-  #   become: yes
-  #   copy:
-  #     dest: /etc/profile.d/k8s-config.sh
-  #     content: |
-  #       export PATH=$PATH:/opt/bin:/opt/cni/bin
-
-  # - name: Create script to watch audit denial messages
-  #   become: yes
-  #   copy:
-  #     dest: /root/watch-audit-denial-messages.sh
-  #     content: |
-  #       tail -f /var/log/audit/audit.log | grep denied
-  #     mode: u=rx,g=rx,o=rx
-
-  - name: Get local hostname.
-    uri:
-      url: http://169.254.169.254/latest/meta-data/local-hostname
-      return_content: yes
-    register: localhostname
-
-  - name: Set local hostname. Use hostnamectl to confirm static hostname.
-    become: yes
-    hostname:
-      name: "{{localhostname.content}}"
-
-  ##########
-  # Amazon SSM Agent
-  ##########
-
-  - name: Copy Amazon SSM Agent
-    become: yes
-    copy:
-      src: "{{item}}"
-      dest: /usr/local/bin
-      mode: 755
-      force: no
-    with_fileglob:
-      - "{{ssm_binary_dir}}/linux_amd64/*"
-
-  - name: Make logging directory
-    become: yes
-    file:
-      path: /var/log/amazon/ssm
-      state: directory
-
-  - name: Make config directory
-    become: yes
-    file:
-      path: /etc/amazon/ssm
-      state: directory
-
-  - name: Copy Amazon SSM Agent JSON
-    become: yes
-    copy:
-      src: "{{ssm_binary_dir}}/amazon-ssm-agent.json.template"
-      dest: /etc/amazon/ssm/amazon-ssm-agent.json
-
-  - name: Copy Amazon SSM Agent JSON
-    become: yes
-    copy:
-      src: "{{ssm_binary_dir}}/seelog_unix.xml"
-      dest: /etc/amazon/ssm
-
-  - name: Create SSM service file.
-    become: yes
-    copy:
-      dest: /etc/systemd/system/amazon-ssm-agent.service
-      content: |
-        [Unit]
-        Description=amazon-ssm-agent
-        [Service]
-        Type=simple 
-        WorkingDirectory=/usr/local/bin
-        ExecStart=/usr/local/bin/amazon-ssm-agent
-        KillMode=process
-        Restart=on-failure
-        RestartSec=15min
-        [Install]
-        WantedBy=network-online.target
-
-  - name: Enable SSM service
-    become: yes
-    service:
-      name: amazon-ssm-agent
-      enabled: yes
-      state: started
-
   ##########
   # Amazon CloudWatch Agent
   ##########
@@ -176,7 +71,7 @@
       extra_args: --user
       name: docker
       state: present
-        
+
   - name: Build CloudWatch Agent Image
     become: yes
     docker_image:

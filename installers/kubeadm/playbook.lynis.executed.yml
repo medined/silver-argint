@@ -1,0 +1,267 @@
+---
+- hosts: fcos
+  gather_facts: false
+
+  vars:
+    ansible_python_interpreter: '/usr/bin/python3'
+    password_max_days: '90'
+    password_min_days: '1'
+    ssh_port: '15762'
+
+  tasks:
+
+    - name: AUTH-9216 - Remove unused entries from /etc/gshadow
+      become: yes
+      lineinfile:
+        path: /etc/gshadow
+        state: absent
+        regexp: "{{ item }}"
+      with_items:
+        - "^audio:"
+        - "^bin:"
+        - "^cdrom:"
+        - "^daemon:"
+        - "^dialout:"
+        - "^disk:"
+        - "^floppy:"
+        - "^ftp:"
+        - "^games:"
+        - "^kmem:"
+        - "^kvm:"
+        - "^lock:"
+        - "^lp:"
+        - "^mail:"
+        - "^man:"
+        - "^mem:"
+        - "^nobody:"
+        - "^printadmin:"
+        - "^render:"
+        - "^sys:"
+        - "^systemd-coredump:"
+        - "^tape:"
+        - "^tty:"
+        - "^users:"
+        - "^video:"
+      tags:
+        - AUTH-9216
+
+    - name: AUTH-9216 - Add sudo to /etc/gshadow to match /etc/group
+      become: yes
+      lineinfile:
+        path: /etc/gshadow
+        state: present
+        regexp: "^sudo:"
+        line: "sudo:x::core"
+      tags:
+        - AUTH-9216
+
+    - name: AUTH-9216 - Add sudo to /etc/gshadow to match /etc/group
+      become: yes
+      lineinfile:
+        path: /etc/gshadow
+        state: present
+        regexp: "^systemd-journal:"
+        line: "systemd-journal:x::core"
+      tags:
+        - AUTH-9216
+
+    - name: AUTH-9228 - Remove unused entries from /etc/shadow
+      become: yes
+      lineinfile:
+        path: /etc/shadow
+        state: absent
+        regexp: "{{ item }}"
+      with_items:
+        - "^bin:"
+        - "^daemon:"
+        - "^adm:"
+        - "^lp:"
+        - "^sync:"
+        - "^shutdown:"
+        - "^halt:"
+        - "^mail:"
+        - "^operator:"
+        - "^games:"
+        - "^ftp:"
+        - "^nobody:"
+        - "^systemd-coredump:"
+      tags:
+        - AUTH-9228
+
+    - name: AUTH-9252 - Check ownership and permissions for sudo configuration files
+      become: yes
+      file:
+        path: /etc/sudoers.d/coreos-sudo-group
+        state: file
+        mode: 0440
+      tags:
+        - AUTH-9252
+
+    - name: AUTH-9286 - PASS_MAX_DAYS - Checking user password aging
+      become: yes
+      lineinfile:
+        path: /etc/login.defs
+        state: present
+        regexp: "^PASS_MAX_DAYS"
+        line: "PASS_MAX_DAYS {{ password_max_days }}"
+      tags:
+        - AUTH-9286
+
+    - name: AUTH-9286 - PASS_MIN_DAYS - Checking user password aging
+      become: yes
+      lineinfile:
+        path: /etc/login.defs
+        state: present
+        regexp: "^PASS_MIN_DAYS"
+        line: "PASS_MIN_DAYS {{ password_min_days }}"
+      tags:
+        - AUTH-9286
+
+    - name: AUTH-9328 - Default umask values in /etc/login.defs
+      become: yes
+      copy:
+        dest: /etc/profile.d/umask.sh
+        content: |
+          # By default, we want umask to get set. This sets it for login shell
+          # Current threshold for system reserved uid/gids is 200
+          # You could check uidgid reservation validity in
+          # /usr/share/doc/setup-*/uidgid file
+          if [ $UID -gt 199 ] && [ "`id -gn`" = "`id -un`" ]; then
+              umask 007
+          else
+              umask 027
+          fi
+        mode: 644
+      tags:
+        - AUTH-9328
+
+    # NIST recommends setting the daemon umask to 027 
+    # (REHL5: http://nvd.nist.gov/scap/content/stylesheet/scap-rhel5-document.htm).
+    #
+    - name: AUTH-9328 - Default umask values in /etc/init.d/functions
+      become: yes
+      lineinfile:
+        path: /etc/init.d/functions
+        state: present
+        regexp: "^umask 022"
+        line: "umask 027"
+      tags:
+        - AUTH-9328
+
+    - name: SSH-7408 - hardening SSH configuration - AllowAgentForwarding
+      become: yes
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: "^#AllowAgentForwarding"
+        line: "AllowAgentForwarding no"
+      tags:
+        - SSH-7408
+
+    - name: SSH-7408 - hardening SSH configuration - AllowTcpForwarding
+      become: yes
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: "^#AllowTcpForwarding"
+        line: "AllowTcpForwarding no"
+      tags:
+        - SSH-7408
+
+    - name: SSH-7408 - hardening SSH configuration - ClientAliveCountMax
+      become: yes
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: "^#ClientAliveCountMax"
+        line: "ClientAliveCountMax 2"
+      tags:
+        - SSH-7408
+
+    - name: SSH-7408 - hardening SSH configuration - Compression
+      become: yes
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: "^#Compression"
+        line: "Compression no"
+      tags:
+        - SSH-7408
+        
+    - name: SSH-7408 - hardening SSH configuration - INFO
+      become: yes
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: "^#LogLevel"
+        line: "LogLevel VERBOSE"
+      tags:
+        - SSH-7408
+
+    - name: SSH-7408 - hardening SSH configuration - MaxAuthTries
+      become: yes
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: "^#MaxAuthTries"
+        line: "MaxAuthTries 3"
+      tags:
+        - SSH-7408
+
+    - name: SSH-7408 - hardening SSH configuration - MaxSessions
+      become: yes
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: "^#MaxSessions"
+        line: "MaxSessions 2"
+      tags:
+        - SSH-7408
+
+    # - name: SSH-7408 - hardening SSH configuration - Port
+    #   become: yes
+    #   lineinfile:
+    #     path: /etc/ssh/sshd_config
+    #     state: present
+    #     regexp: "^#Port"
+    #     line: "Port {{ ssh_port }}"
+    #   tags:
+    #     - SSH-7408
+
+    - name: SSH-7408 - hardening SSH configuration - TCPKeepAlive
+      become: yes
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: "^#TCPKeepAlive"
+        line: "TCPKeepAlive no"
+      tags:
+        - SSH-7408
+
+    - name: SSH-7408 - hardening SSH configuration - X11Forwarding
+      become: yes
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: "^#X11Forwarding"
+        line: "X11Forwarding no"
+      tags:
+        - SSH-7408
+
+    - name: STRG-1840 - Check if USB storage is disabled
+      become: yes
+      copy:
+        dest: /etc/modprobe.d/usb.conf
+        content: |
+          blacklist usb-storage
+      tags:
+        - STRG-1840
+
+    - name: STRG-1846 - Check if firewire storage is disabled
+      become: yes
+      copy:
+        dest: /etc/modprobe.d/firewire.conf
+        content: |
+          blacklist firewire-core
+      tags:
+        - STRG-1846

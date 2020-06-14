@@ -79,6 +79,12 @@ The Fedora CoreOS is very dynamic and anything is this document might change.
 * Install a pod networking layer like Weave Net
 * Join the other nodes to the master
 
+## Running kubeadm
+
+```bash
+kubeadm init --ignore-preflight-errors=NumCPU
+```
+
 ## Links
 
 * https://www.cloudtechnologyexperts.com/kubeadm-on-aws/

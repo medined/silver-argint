@@ -134,14 +134,30 @@ ssh-keygen -R $PUBLIC_IP > /dev/null 2>&1
 echo "get ssh fingerprint."
 ssh-keyscan -H $PUBLIC_IP >> ~/.ssh/known_hosts 2>/dev/null
 
-# PRODUCTION NODE: In a production environment, audit
-# might not be installed.
+# Reasons To Install Packages
+# audit - to enable /var/log/audit/audit.log.
+# golang
+# setools setroubleshoot - to debug selinux issues and needed by auditd.
+# python libselinux-python3 - to support ansible
+# udica - helps to generate selinux policies but I don't want it.
+
+#
+# How to remove all packages:
+#   sudo rpm-ostree uninstall --all
+# 
+
+exit
 
 echo "install packages."
-ssh -t \
-  -i $PKI_PRIVATE_PEM \
-  $SSH_USER@$PUBLIC_IP \
-  "sudo rpm-ostree install audit conntrack ethtool golang libselinux-python3 make python setools setroubleshoot udica"
+ssh -t -i $PKI_PRIVATE_PEM $SSH_USER@$PUBLIC_IP "sudo rpm-ostree install audit"
+ssh -t -i $PKI_PRIVATE_PEM $SSH_USER@$PUBLIC_IP "sudo rpm-ostree install conntrack"
+ssh -t -i $PKI_PRIVATE_PEM $SSH_USER@$PUBLIC_IP "sudo rpm-ostree install ethtool"
+#ssh -t -i $PKI_PRIVATE_PEM $SSH_USER@$PUBLIC_IP "sudo rpm-ostree install golang"
+ssh -t -i $PKI_PRIVATE_PEM $SSH_USER@$PUBLIC_IP "sudo rpm-ostree install libselinux-python3"
+ssh -t -i $PKI_PRIVATE_PEM $SSH_USER@$PUBLIC_IP "sudo rpm-ostree install make"
+ssh -t -i $PKI_PRIVATE_PEM $SSH_USER@$PUBLIC_IP "sudo rpm-ostree install python"
+ssh -t -i $PKI_PRIVATE_PEM $SSH_USER@$PUBLIC_IP "sudo rpm-ostree install setools"
+ssh -t -i $PKI_PRIVATE_PEM $SSH_USER@$PUBLIC_IP "sudo rpm-ostree install setroubleshoot"
 
 echo "reboot instance."
 aws ec2 reboot-instances --instance-ids $INSTANCE_ID --region $AWS_REGION
@@ -157,12 +173,32 @@ $PUBLIC_IP
 EOF
 
 echo "run playbook."
+
+python3 $(which ansible-playbook) \
+    -i inventory \
+    --private-key $PKI_PRIVATE_PEM \
+    -u $SSH_USER \
+    playbook.main.yml
+
 python3 $(which ansible-playbook) \
     --extra-vars "ssm_binary_dir=$SSM_BINARY_DIR" \
     -i inventory \
     --private-key $PKI_PRIVATE_PEM \
     -u $SSH_USER \
-    main.playbook.yml
+    playbook.aws-ssm-agent.yml
+
+python3 $(which ansible-playbook) \
+    -i inventory \
+    --private-key $PKI_PRIVATE_PEM \
+    -u $SSH_USER \
+    playbook.aws-cloudwatch-agent.yml
+
+python3 $(which ansible-playbook) \
+    -i inventory \
+    --private-key $PKI_PRIVATE_PEM \
+    -u $SSH_USER \
+    playbook.lynis.executed.yml
+
 
 echo "display variables."
 cat <<EOF

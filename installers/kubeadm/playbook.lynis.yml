@@ -1,0 +1,21 @@
+---
+- hosts: fcos
+  gather_facts: false
+
+  vars:
+    ansible_python_interpreter: '/usr/bin/python3'
+    password_max_days: '90'
+    password_min_days: '1'
+    ssh_port: '15762'
+
+  tasks:
+
+    - name: AUTH-9408 - FAILLOG_ENAB - Logging of failed login attempts via /etc/login.defs
+      become: yes
+      lineinfile:
+        path: /etc/login.defs
+        state: present
+        regexp: "^FAILLOG_ENAB"
+        line: "FAILLOG_ENAB yes"
+      tags:
+        - AUTH-9408

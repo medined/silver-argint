@@ -1,0 +1,154 @@
+---
+- hosts: fcos
+  gather_facts: false
+
+  vars:
+    ansible_python_interpreter: '/usr/bin/python3'
+
+  tasks:
+
+    - name: Search /etc/audit/rules.d for audit rule entries for sysadmin actions
+      find:
+        paths: /etc/audit/rules.d
+        recurse: false
+        contains: ^.*/etc/sudoers.*$
+        patterns: '*.rules'
+      register: find_audit_sysadmin_actions
+      tags:
+        - audit_rules_sysadmin_actions
+        - medium_severity
+        - restrict_strategy
+        - low_complexity
+        - low_disruption
+        - no_reboot_needed
+        - CCE-82613-1
+        - NIST-800-53-AC-2(7)(b)
+        - NIST-800-53-AU-2(d)
+        - NIST-800-53-AU-12(c)
+        - NIST-800-53-AC-6(9)
+        - NIST-800-53-CM-6(a)
+        - NIST-800-171-3.1.7
+        - PCI-DSS-Req-10.2.2
+        - PCI-DSS-Req-10.2.5.b
+        - CJIS-5.4.1.1
+
+    - name: Use /etc/audit/rules.d/actions.rules as the recipient for the rule
+      set_fact:
+        all_sysadmin_actions_files:
+          - /etc/audit/rules.d/actions.rules
+      when:
+        - find_audit_sysadmin_actions.matched is defined and find_audit_sysadmin_actions.matched
+          == 0
+      tags:
+        - audit_rules_sysadmin_actions
+        - medium_severity
+        - restrict_strategy
+        - low_complexity
+        - low_disruption
+        - no_reboot_needed
+        - CCE-82613-1
+        - NIST-800-53-AC-2(7)(b)
+        - NIST-800-53-AU-2(d)
+        - NIST-800-53-AU-12(c)
+        - NIST-800-53-AC-6(9)
+        - NIST-800-53-CM-6(a)
+        - NIST-800-171-3.1.7
+        - PCI-DSS-Req-10.2.2
+        - PCI-DSS-Req-10.2.5.b
+        - CJIS-5.4.1.1
+
+    - name: Use matched file as the recipient for the rule
+      set_fact:
+        all_sysadmin_actions_files:
+          - '{{ find_audit_sysadmin_actions.files | map(attribute=''path'') | list | first
+            }}'
+      tags:
+        - audit_rules_sysadmin_actions
+        - medium_severity
+        - restrict_strategy
+        - low_complexity
+        - low_disruption
+        - no_reboot_needed
+        - CCE-82613-1
+        - NIST-800-53-AC-2(7)(b)
+        - NIST-800-53-AU-2(d)
+        - NIST-800-53-AU-12(c)
+        - NIST-800-53-AC-6(9)
+        - NIST-800-53-CM-6(a)
+        - NIST-800-171-3.1.7
+        - PCI-DSS-Req-10.2.2
+        - PCI-DSS-Req-10.2.5.b
+        - CJIS-5.4.1.1
+
+    - name: Inserts/replaces audit rule for /etc/sudoers rule in rules.d
+      become: yes
+      lineinfile:
+        path: '{{ all_sysadmin_actions_files[0] }}'
+        line: -w /etc/sudoers -p wa -k actions
+        create: true
+      tags:
+        - audit_rules_sysadmin_actions
+        - medium_severity
+        - restrict_strategy
+        - low_complexity
+        - low_disruption
+        - no_reboot_needed
+        - CCE-82613-1
+        - NIST-800-53-AC-2(7)(b)
+        - NIST-800-53-AU-2(d)
+        - NIST-800-53-AU-12(c)
+        - NIST-800-53-AC-6(9)
+        - NIST-800-53-CM-6(a)
+        - NIST-800-171-3.1.7
+        - PCI-DSS-Req-10.2.2
+        - PCI-DSS-Req-10.2.5.b
+        - CJIS-5.4.1.1
+
+    - name: Disable service debug-shell
+      become: yes
+      systemd:
+        name: debug-shell.service
+        enabled: no
+        state: stopped
+        masked: yes
+      tags:
+        - service_debug-shell_disabled
+        - medium_severity
+        - disable_strategy
+        - low_complexity
+        - low_disruption
+        - no_reboot_needed
+        - CCE-82496-1
+        - NIST-800-171-3.4.5
+
+    - name: Disable SSH Support for .rhosts Files
+      block:
+
+        - name: fail if multiple IgnoreRhosts lines.
+          become: yes
+          shell: R=$(grep "IgnoreRhosts" /etc/ssh/sshd_config | wc -l) && [ $R == 1 ]
+
+        - name: Insert correct line to /etc/ssh/sshd_config
+          become: yes
+          lineinfile:
+            path: /etc/ssh/sshd_config
+            create: true
+            line: IgnoreRhosts yes
+            state: present
+            insertbefore: ^[#\s]*Match
+            validate: /usr/sbin/sshd -t -f %s
+
+      tags:
+        - sshd_disable_rhosts
+        - medium_severity
+        - restrict_strategy
+        - low_complexity
+        - low_disruption
+        - no_reboot_needed
+        - CCE-82665-1
+        - NIST-800-53-AC-17(a)
+        - NIST-800-53-CM-7(a)
+        - NIST-800-53-CM-7(b)
+        - NIST-800-53-CM-6(a)
+        - NIST-800-171-3.1.12
+        - CJIS-5.5.6
