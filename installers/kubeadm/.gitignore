@@ -1,3 +1,5 @@
 venv
 inventory
 ssh-to-server.sh
+facts.txt
+grub-password.txt

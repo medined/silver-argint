@@ -1,12 +1,14 @@
 ---
 - hosts: fcos
   gather_facts: false
+  become: yes
 
   vars:
-    ansible_python_interpreter: '/usr/bin/python3'
-    password_max_days: '90'
-    password_min_days: '1'
-    ssh_port: '15762'
+    ansible_python_interpreter: /usr/bin/python3
+    password_max_days: 90
+    password_min_days: 1
+    ssh_port: 15762
+    grub_user: core
 
   tasks:
 
@@ -46,7 +48,6 @@
         - AUTH-9216
 
     - name: AUTH-9216 - Add sudo to /etc/gshadow to match /etc/group
-      become: yes
       lineinfile:
         path: /etc/gshadow
         state: present
@@ -56,7 +57,6 @@
         - AUTH-9216
 
     - name: AUTH-9216 - Add sudo to /etc/gshadow to match /etc/group
-      become: yes
       lineinfile:
         path: /etc/gshadow
         state: present
@@ -66,7 +66,6 @@
         - AUTH-9216
 
     - name: AUTH-9228 - Remove unused entries from /etc/shadow
-      become: yes
       lineinfile:
         path: /etc/shadow
         state: absent
@@ -89,7 +88,6 @@
         - AUTH-9228
 
     - name: AUTH-9252 - Check ownership and permissions for sudo configuration files
-      become: yes
       file:
         path: /etc/sudoers.d/coreos-sudo-group
         state: file
@@ -98,7 +96,6 @@
         - AUTH-9252
 
     - name: AUTH-9286 - PASS_MAX_DAYS - Checking user password aging
-      become: yes
       lineinfile:
         path: /etc/login.defs
         state: present
@@ -108,7 +105,6 @@
         - AUTH-9286
 
     - name: AUTH-9286 - PASS_MIN_DAYS - Checking user password aging
-      become: yes
       lineinfile:
         path: /etc/login.defs
         state: present
@@ -118,7 +114,6 @@
         - AUTH-9286
 
     - name: AUTH-9328 - Default umask values in /etc/login.defs
-      become: yes
       copy:
         dest: /etc/profile.d/umask.sh
         content: |
@@ -138,18 +133,44 @@
     # NIST recommends setting the daemon umask to 027 
     # (REHL5: http://nvd.nist.gov/scap/content/stylesheet/scap-rhel5-document.htm).
     #
+    - name: AUTH-9328 - does /etc/init.d/functions exist?
+      stat:
+        path: /etc/init.d/functions
+      register: auth9328
+
     - name: AUTH-9328 - Default umask values in /etc/init.d/functions
-      become: yes
       lineinfile:
         path: /etc/init.d/functions
         state: present
         regexp: "^umask 022"
         line: "umask 027"
+      when: auth9328.stat.exists      
       tags:
         - AUTH-9328
 
+    - name: BOOT-5122- Installing template fur grub users.
+      template:
+        src: grub-fedora-coreos.j2
+        dest: /etc/grub.d/01_users
+        owner: root
+        group: root
+        mode: 0700
+      tags: BOOT-5122
+
+    - name: BOOT-5122 - add password
+      lineinfile:
+        dest: /etc/grub2.cfg
+        regexp: "^password_pbkdf2 {{ grub_user }}"
+        state: present
+        insertafter: EOF
+        line: "password_pbkdf2 {{ grub_user }} {{ grub_password }}"
+      tags: BOOT-5122
+
+    - name: BOOT-5122 - grub2-mkconfig
+      command: grub2-mkconfig -o /boot/grub2/grub.cfg
+      tags: BOOT-5122
+
     - name: SSH-7408 - hardening SSH configuration - AllowAgentForwarding
-      become: yes
       lineinfile:
         path: /etc/ssh/sshd_config
         state: present
@@ -159,7 +180,6 @@
         - SSH-7408
 
     - name: SSH-7408 - hardening SSH configuration - AllowTcpForwarding
-      become: yes
       lineinfile:
         path: /etc/ssh/sshd_config
         state: present
@@ -169,7 +189,6 @@
         - SSH-7408
 
     - name: SSH-7408 - hardening SSH configuration - ClientAliveCountMax
-      become: yes
       lineinfile:
         path: /etc/ssh/sshd_config
         state: present
@@ -179,7 +198,6 @@
         - SSH-7408
 
     - name: SSH-7408 - hardening SSH configuration - Compression
-      become: yes
       lineinfile:
         path: /etc/ssh/sshd_config
         state: present
@@ -189,7 +207,6 @@
         - SSH-7408
         
     - name: SSH-7408 - hardening SSH configuration - INFO
-      become: yes
       lineinfile:
         path: /etc/ssh/sshd_config
         state: present
@@ -199,7 +216,6 @@
         - SSH-7408
 
     - name: SSH-7408 - hardening SSH configuration - MaxAuthTries
-      become: yes
       lineinfile:
         path: /etc/ssh/sshd_config
         state: present
@@ -209,7 +225,6 @@
         - SSH-7408
 
     - name: SSH-7408 - hardening SSH configuration - MaxSessions
-      become: yes
       lineinfile:
         path: /etc/ssh/sshd_config
         state: present
@@ -219,7 +234,6 @@
         - SSH-7408
 
     # - name: SSH-7408 - hardening SSH configuration - Port
-    #   become: yes
     #   lineinfile:
     #     path: /etc/ssh/sshd_config
     #     state: present
@@ -229,7 +243,6 @@
     #     - SSH-7408
 
     - name: SSH-7408 - hardening SSH configuration - TCPKeepAlive
-      become: yes
       lineinfile:
         path: /etc/ssh/sshd_config
         state: present
@@ -239,7 +252,6 @@
         - SSH-7408
 
     - name: SSH-7408 - hardening SSH configuration - X11Forwarding
-      become: yes
       lineinfile:
         path: /etc/ssh/sshd_config
         state: present
@@ -249,7 +261,6 @@
         - SSH-7408
 
     - name: STRG-1840 - Check if USB storage is disabled
-      become: yes
       copy:
         dest: /etc/modprobe.d/usb.conf
         content: |
@@ -258,7 +269,6 @@
         - STRG-1840
 
     - name: STRG-1846 - Check if firewire storage is disabled
-      become: yes
       copy:
         dest: /etc/modprobe.d/firewire.conf
         content: |
